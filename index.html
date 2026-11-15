@@ -3,112 +3,146 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#070b16">
 <title>Pixel Reef</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--ink:#f4f1de;--mute:#9fb3c8;--panel:#16213e;--panel2:#1f2f57;--edge:#0a0f1f;--hi:#3d5a99;--gold:#ffd166;--coral:#ef476f;--mint:#06d6a0;--sky:#4cc9f0}
 *{box-sizing:border-box}
-html,body{margin:0;height:100%;background:radial-gradient(ellipse at 50% 0%,#14234a,#070b16 70%);color:var(--ink);font-family:'Pixelify Sans',monospace;font-variant-ligatures:none;font-feature-settings:'liga' 0,'clig' 0;overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:manipulation}
-body{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:10px 16px}
-#hud{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;width:100%;max-width:1200px}
+html,body{margin:0;height:100%;background:radial-gradient(ellipse at 50% 0%,#14234a,#070b16 70%);color:var(--ink);font-family:'Pixelify Sans',monospace;font-variant-ligatures:none;font-feature-settings:'liga' 0,'clig' 0;overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+@supports (height:100dvh){html,body{height:100dvh}}
+body{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:max(8px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
 .px{background:var(--panel);border:3px solid var(--edge);box-shadow:inset 0 0 0 2px var(--hi),0 4px 0 var(--edge);border-radius:4px}
-.chip{display:flex;align-items:center;gap:6px;padding:4px 10px;font-size:16px;font-weight:600;min-height:36px}
-.chip #coins{color:var(--gold);min-width:3ch}
+#hud{display:flex;gap:8px;justify-content:center;width:100%;max-width:1200px}
+.chip{display:flex;align-items:center;gap:6px;padding:3px 10px;font-size:16px;font-weight:600;min-height:40px}
+.chip .ico{font-size:18px}
+.stat{display:flex;flex-direction:column;gap:3px;line-height:1}
+.stat small{font-size:11px;color:var(--mute);font-weight:400}
+#coins{color:var(--gold)}
+#rate{color:var(--mint)}
 .meter{width:70px;height:8px;background:#0a0f1f;border:1px solid #000;position:relative;overflow:hidden}
 .meter i{position:absolute;left:0;top:0;bottom:0;width:50%;background:var(--mint);transition:width .3s,background .3s}
 #lvl{color:var(--gold)}
+#goal{display:flex;align-items:center;gap:8px;padding:3px 6px 3px 10px;font-size:14px;min-height:36px;max-width:min(100%,640px);cursor:default}
+#goal .gtxt{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#goal .meter{width:56px;flex:none}
+#goal b{color:var(--gold);white-space:nowrap}
+#goal .btn{display:none}
+#goal.done{box-shadow:inset 0 0 0 2px var(--mint),0 4px 0 var(--edge);cursor:pointer;animation:glow 1s ease-in-out infinite alternate}
+#goal.done .btn{display:flex}
+@keyframes glow{to{filter:brightness(1.25)}}
 #tankwrap{position:relative;padding:10px;background:linear-gradient(#3b2a1e,#24170e);border:3px solid var(--edge);box-shadow:inset 0 0 0 3px #5c4330,0 8px 0 var(--edge),0 24px 70px rgba(0,0,0,.65);border-radius:6px}
+#tankwrap.bump{animation:bump .25s}
+@keyframes bump{30%{transform:translateY(3px) scale(1.004)}}
 canvas#c{display:block;image-rendering:pixelated;image-rendering:crisp-edges;cursor:pointer;touch-action:none}
-#bar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
-.btn{font:inherit;font-size:14px;font-weight:600;color:var(--ink);background:var(--panel2);border:3px solid var(--edge);box-shadow:inset 0 -4px 0 rgba(0,0,0,.35),inset 0 0 0 2px var(--hi);border-radius:4px;padding:6px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:64px}
-.btn .ic{font-size:20px;line-height:1}
+#tools{position:absolute;top:16px;right:16px;display:flex;gap:6px;z-index:5}
+.ibtn{width:38px;height:38px;font-size:18px;display:flex;align-items:center;justify-content:center;background:rgba(22,33,62,.75);border:2px solid var(--edge);box-shadow:inset 0 0 0 2px var(--hi);border-radius:4px;cursor:pointer;color:var(--ink);padding:0}
+#bar{display:flex;gap:8px;justify-content:center}
+.btn{font:inherit;font-size:14px;font-weight:600;color:var(--ink);background:var(--panel2);border:3px solid var(--edge);box-shadow:inset 0 -4px 0 rgba(0,0,0,.35),inset 0 0 0 2px var(--hi);border-radius:4px;padding:6px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:72px;min-height:54px}
+.btn .ic{font-size:22px;line-height:1}
 .btn:hover{filter:brightness(1.15)}
 .btn:active{transform:translateY(2px);box-shadow:inset 0 0 0 2px var(--hi)}
 .btn.on{background:#2d6a4f;box-shadow:inset 0 -4px 0 rgba(0,0,0,.35),inset 0 0 0 2px var(--mint)}
-.btn:disabled{opacity:.45;cursor:not-allowed}
-.btn.sm{flex-direction:row;min-width:0;padding:4px 10px;font-size:13px}
-.btn:focus-visible,.card:focus-visible,.tab:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
-#toasts{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none;z-index:7;width:max-content;max-width:calc(100% - 24px)}
+.btn.sm{flex-direction:row;min-width:0;min-height:36px;padding:4px 12px;font-size:13px}
+.btn:focus-visible,.card:focus-visible,.tab:focus-visible,.ibtn:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+#toasts{position:absolute;top:16px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none;z-index:7;width:max-content;max-width:calc(100% - 110px)}
 .toast{padding:6px 14px;font-size:15px;text-align:center;animation:tin .25s ease-out,tout .4s ease-in 2.6s forwards}
 .toast.gold{background:#5c4a12;box-shadow:inset 0 0 0 2px var(--gold),0 4px 0 var(--edge)}
 .toast.pink{background:#5a1f3d;box-shadow:inset 0 0 0 2px #ff8fc8,0 4px 0 var(--edge)}
 @keyframes tin{from{transform:translateY(-8px);opacity:0}}
 @keyframes tout{to{opacity:0;transform:translateY(-6px)}}
-#banner{position:absolute;left:50%;top:18px;transform:translateX(-50%);padding:6px 8px 6px 12px;display:none;gap:8px;align-items:center;font-size:14px;z-index:5;white-space:nowrap}
+#banner{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);padding:6px 8px 6px 12px;display:none;gap:8px;align-items:center;font-size:14px;z-index:5;white-space:nowrap}
 .modal{position:fixed;inset:0;background:rgba(5,8,18,.72);display:none;align-items:center;justify-content:center;z-index:40;padding:16px}
 .modal.open{display:flex}
 .sheet{width:min(880px,100%);max-height:86vh;display:flex;flex-direction:column;padding:14px}
 .sheet h2{margin:0 0 10px;font-size:22px;display:flex;justify-content:space-between;align-items:center;gap:10px}
 .sheet h2 small{font-size:14px;color:var(--mute);font-weight:400;margin-right:auto}
-.x{font:inherit;background:none;border:0;color:var(--ink);font-size:22px;cursor:pointer;padding:0 4px}
+.x{font:inherit;background:none;border:0;color:var(--ink);font-size:24px;cursor:pointer;padding:4px 8px}
 .tabs{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
-.tab{font:inherit;font-weight:600;font-size:14px;color:var(--ink);background:#0f1730;border:2px solid var(--edge);padding:5px 12px;cursor:pointer;border-radius:3px}
+.tab{font:inherit;font-weight:600;font-size:15px;color:var(--ink);background:#0f1730;border:2px solid var(--edge);padding:8px 14px;cursor:pointer;border-radius:3px}
 .tab.on{background:var(--hi)}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(136px,1fr));gap:10px;overflow:auto;padding:2px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;overflow:auto;padding:2px}
 .card{background:#0f1730;border:2px solid var(--edge);box-shadow:inset 0 0 0 2px #24365f;padding:8px;text-align:center;cursor:pointer;border-radius:3px;display:flex;flex-direction:column;align-items:center;gap:4px}
 .card:hover{box-shadow:inset 0 0 0 2px var(--sky)}
 .card canvas,.card .art{width:96px;height:64px;image-rendering:pixelated;background:linear-gradient(#1d6fa3,#0b2545);border:2px solid var(--edge)}
 .card .art{display:flex;align-items:center;justify-content:center;font-size:34px}
-.card .nm{font-weight:700;font-size:15px}
-.card .pr{color:var(--gold);font-size:14px}
-.card .ds{color:var(--mute);font-size:12px;line-height:1.25}
+.card .nm{font-weight:700;font-size:16px}
+.card .pr{color:var(--gold);font-size:15px}
+.card .ds{color:var(--mute);font-size:13px;line-height:1.25;white-space:pre-line}
+.card .tag{font-size:12px;padding:1px 6px;border-radius:3px;background:#24365f;color:var(--sky)}
+.card .tag.salt{color:#ffd1f0;background:#4a2350}
 .card.lock{opacity:.55;cursor:default}
 .card.lock canvas{filter:grayscale(1) brightness(.4)}
 .card.poor .pr{color:var(--coral)}
-.vdots{letter-spacing:3px;font-size:13px}
-#fishPanel{position:absolute;right:18px;top:18px;width:224px;padding:10px;display:none;z-index:6;font-size:14px}
+.vdots{letter-spacing:3px;font-size:14px}
+#fishPanel{position:absolute;left:18px;top:18px;width:230px;padding:10px;display:none;z-index:6;font-size:14px}
 #fishPanel.open{display:block}
 #fishPanel input{font:inherit;font-size:17px;font-weight:700;width:100%;background:#0a0f1f;color:var(--ink);border:2px solid var(--edge);padding:2px 6px}
 .row{display:flex;justify-content:space-between;align-items:center;margin:6px 0;gap:8px}
 .row .meter{width:110px}
 #fpSp{color:var(--sky)}
+#fpNote{color:var(--mute);font-size:12px;line-height:1.3;margin:4px 0}
 #welcome .sheet{width:min(440px,100%);text-align:center;font-size:17px;line-height:1.4}
 #welcome .btn{margin:6px auto 0}
-@supports (height:100dvh){html,body{height:100dvh}}
-body{padding:max(8px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
 @media (max-width:640px){
- body{gap:8px;padding-left:max(10px,env(safe-area-inset-left));padding-right:max(10px,env(safe-area-inset-right))}
- #hud,#bar{gap:4px;flex-wrap:nowrap;width:100%}
- .btn{flex:1;min-width:0;padding:4px 2px;font-size:10px;border-width:2px}
- .btn .ic{font-size:18px}
- .chip{font-size:12px;padding:2px 5px;min-height:30px;gap:3px;border-width:2px;flex:1 1 auto;justify-content:center}
- .meter{width:26px}
- #clock .lbl{display:none}
+ body{gap:6px;padding-left:max(8px,env(safe-area-inset-left));padding-right:max(8px,env(safe-area-inset-right))}
+ #hud,#bar{gap:4px;width:100%}
+ .btn{flex:1;min-width:0;min-height:56px;padding:4px 2px;font-size:11px;border-width:2px}
+ .btn .ic{font-size:22px}
+ .chip{font-size:13px;padding:2px 5px;min-height:38px;gap:4px;border-width:2px;flex:1 1 auto;justify-content:center}
+ .chip .ico{font-size:15px}
+ .stat small{font-size:10px}
+ .meter{width:34px}
+ #goal{width:100%;font-size:13px;border-width:2px}
+ #goal .meter{width:40px}
  #tankwrap{padding:5px;border-width:2px}
+ #tools{top:9px;right:9px}
+ .ibtn{width:36px;height:36px;font-size:16px}
  #fishPanel{left:8px;right:8px;width:auto;top:auto;bottom:8px}
- #banner{top:8px;font-size:12px;white-space:normal;width:calc(100% - 16px);justify-content:space-between}
- .grid{grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:6px}
- .card canvas,.card .art{width:72px;height:48px}
+ #banner{bottom:8px;font-size:12px;white-space:normal;width:calc(100% - 16px);justify-content:space-between}
+ #toasts{top:8px;max-width:calc(100% - 96px)}
+ .grid{grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:6px}
+ .card canvas,.card .art{width:80px;height:54px}
  .sheet{padding:10px;max-height:92dvh}
  .toast{font-size:13px}
 }
-@media (max-height:500px) and (orientation:landscape){
+@media (max-height:520px) and (orientation:landscape){
  body{gap:4px;padding-top:max(4px,env(safe-area-inset-top));padding-bottom:max(4px,env(safe-area-inset-bottom))}
- .chip{min-height:26px;font-size:13px;padding:1px 7px}
- .btn{flex-direction:row;gap:4px;padding:3px 8px;font-size:12px}
- .btn .ic{font-size:16px}
+ #hud{gap:4px}
+ .chip{min-height:30px;font-size:13px;padding:1px 7px}
+ .stat small{display:none}
+ #goal{min-height:28px;font-size:12px}
+ .btn{flex-direction:row;gap:6px;padding:3px 10px;font-size:12px;min-height:40px}
+ .btn .ic{font-size:18px}
  #tankwrap{padding:4px}
- #fishPanel{left:auto;right:8px;top:8px;bottom:auto;width:200px;font-size:12px;padding:6px}
+ #fishPanel{left:8px;right:auto;top:8px;bottom:auto;width:210px;font-size:12px;padding:6px}
 }
+@media (prefers-reduced-motion:reduce){#goal.done,#tankwrap.bump{animation:none}}
 </style>
 </head>
 <body>
 <div id="hud">
-  <div class="px chip" title="Coins">🪙 <span id="coins">0</span></div>
-  <div class="px chip" title="Level and XP">LV <span id="lvl">1</span><div class="meter"><i id="xpb"></i></div></div>
-  <div class="px chip" title="Fish in tank / capacity">🐟 <span id="pop">0/6</span></div>
-  <div class="px chip" title="Water clarity">💧<div class="meter"><i id="wat"></i></div></div>
-  <div class="px chip" title="Average happiness">💗<div class="meter"><i id="hap"></i></div></div>
-  <div class="px chip" title="Time of day" id="clock">☀️ <span class="lbl">Day</span></div>
+  <div class="px chip" title="Coins and income per minute"><span class="ico">🪙</span><div class="stat"><span id="coins">0</span><small id="rate">+0/min</small></div></div>
+  <div class="px chip" title="Level and XP"><div class="stat"><span>LV <span id="lvl">1</span></span><div class="meter"><i id="xpb"></i></div></div></div>
+  <div class="px chip" title="Fish in tank / capacity"><span class="ico">🐟</span><div class="stat"><span id="pop">0/8</span><small>fish</small></div></div>
+  <div class="px chip" title="Water clarity: clean it when it turns green"><span class="ico">💧</span><div class="stat"><small>Water</small><div class="meter"><i id="wat"></i></div></div></div>
+  <div class="px chip" title="Average fish happiness"><span class="ico">💗</span><div class="stat"><small>Mood</small><div class="meter"><i id="hap"></i></div></div></div>
 </div>
 
+<div id="goal" class="px" role="status"><span id="goalIc">🎯</span><span class="gtxt" id="goalTxt"></span><div class="meter"><i id="goalBar"></i></div><b id="goalRw"></b><button class="btn sm" id="goalClaim">Claim</button></div>
+
 <div id="tankwrap">
-  <canvas id="c" width="320" height="180" aria-label="Aquarium tank. Tap the water to drop food, tap coins to collect them, tap a fish to see it."></canvas>
+  <canvas id="c" width="320" height="180" aria-label="Aquarium tank. Tap the water to drop food, tap or swipe coins to collect them, tap a fish to see it."></canvas>
+  <div id="tools">
+    <button class="ibtn" id="bLight" title="Light: auto / day / night" aria-label="Light mode"><span id="lightIc">💡</span></button>
+    <button class="ibtn" id="bSound" title="Sound on/off" aria-label="Sound"><span id="soundIc">🔊</span></button>
+  </div>
   <div id="banner" class="px"><span id="bannerTxt"></span><button class="btn sm" id="bannerSell" style="display:none">Sell</button><button class="btn sm" id="bannerBtn">Done</button></div>
   <div id="fishPanel" class="px" role="dialog" aria-label="Fish details">
     <input id="fpName" maxlength="14" aria-label="Fish name">
     <div class="row"><span id="fpSp"></span><span id="fpStage"></span></div>
+    <div id="fpNote"></div>
     <div class="row">Hunger<div class="meter"><i id="fpHun"></i></div></div>
     <div class="row">Mood<div class="meter"><i id="fpMood"></i></div></div>
     <div class="row"><span>Age</span><span id="fpAge"></span></div>
@@ -119,12 +153,11 @@ body{padding:max(8px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-righ
 
 <div id="bar">
   <button class="btn" id="bFeed" title="Drop a pinch of food"><span class="ic">🍤</span>Feed</button>
-  <button class="btn" id="bClean" title="Clean the water"><span class="ic">🧽</span><span id="cleanTxt">Clean</span></button>
+  <button class="btn" id="bClean" title="Clean the water"><span class="ic">🧽</span>Clean</button>
   <button class="btn" id="bShop" title="Buy fish, decor and upgrades"><span class="ic">🛒</span>Shop</button>
   <button class="btn" id="bEdit" title="Move or sell decorations"><span class="ic">🪴</span>Decor</button>
   <button class="btn" id="bDex" title="Your collection"><span class="ic">📖</span>Fishdex</button>
-  <button class="btn" id="bLight" title="Light: auto / day / night"><span class="ic" id="lightIc">💡</span><span id="lightTxt">Auto</span></button>
-  <button class="btn" id="bSound" title="Sound on/off"><span class="ic" id="soundIc">🔊</span>Sound</button>
+  <button class="btn" id="bPhoto" title="Save a photo of your tank"><span class="ic">📸</span>Photo</button>
 </div>
 
 <div class="modal" id="shop"><div class="sheet px">
@@ -139,9 +172,9 @@ body{padding:max(8px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-righ
 </div></div>
 
 <div class="modal" id="welcome"><div class="sheet px">
-  <h2 style="justify-content:center">Welcome back!</h2>
+  <h2 style="justify-content:center" id="welcomeTitle">Welcome back!</h2>
   <p id="welcomeTxt"></p>
-  <button class="btn" data-close>Collect</button>
+  <button class="btn sm" data-close>Collect</button>
 </div></div>
 
 <script>
@@ -222,6 +255,24 @@ const SPECIES = {
     map: ['.......ssssss.........','.....ssllssllss.......','....sllsslsllsss...bb.','...sssssssssssss..bbbb','..sllssllssllssssbbkbb','..ssssssssssssssbbbbb.','bb.ssssssssssss...bb..','.bbb..bb.....bb.......','..b....bb...bb........'] },
 };
 const FRY_MAP = ['..bb.', 'fbbkb', '..ll.'];
+// Water type + a real-world fact per species (shown in the shop and the fish panel).
+const INFO = {
+  guppy: ['fresh', 'Real guppies give birth to live babies, no eggs!'],
+  tetra: ['fresh', 'Their neon stripe helps the school find each other in dark rivers.'],
+  goldfish: ['fresh', 'Goldfish can learn to recognise the person who feeds them.'],
+  snail: ['fresh', 'A snail can have thousands of tiny teeth on its tongue.'],
+  clown: ['salt', 'Clownfish are protected from their anemone\'s sting by a slimy coat.'],
+  angel: ['fresh', 'Angelfish pairs often stay together for life.'],
+  crab: ['fresh', 'Crabs walk sideways because of the way their legs bend.'],
+  betta: ['fresh', 'Bettas can gulp air from the surface with a special organ.'],
+  puffer: ['salt', 'Puffers gulp water to blow up into a spiky ball.'],
+  tang: ['salt', 'Tangs hide a tiny scalpel-like spine near the tail.'],
+  jelly: ['salt', 'Jellyfish have no brain, no heart and no bones.'],
+  koi: ['fresh', 'Koi can live for more than 50 years.'],
+  horse: ['salt', 'Seahorse dads carry the babies in a pouch.'],
+  lion: ['salt', 'Those fancy fins have venomous spines.'],
+  turtle: ['salt', 'Sea turtles can rest underwater for hours on one breath.'],
+};
 
 const VARIANTS = {
   normal:   { name: 'Classic',  chance: 0,   fn: c => c,                        filter: 'none' },
@@ -271,8 +322,8 @@ const FILTER = [0, .3, .55, .75];
 const UPGRADES = {
   tank:   { name: 'Bigger Tank',  icon: '📦', cost: [100, 250, 600, 1200], desc: '+3 fish capacity' },
   filter: { name: 'Water Filter', icon: '🌀', cost: [60, 180, 450],         desc: 'Water gets dirty slower' },
-  feeder: { name: 'Auto Feeder',  icon: '🥣', cost: [120, 300, 700],        desc: 'Feeds hungry fish for you' },
-  magnet: { name: 'Coin Magnet',  icon: '🧲', cost: [250],                  desc: 'Auto-collects coins' },
+  feeder: { name: 'Auto Feeder',  icon: '🥣', cost: [80, 250, 600],         desc: 'Feeds hungry fish for you' },
+  magnet: { name: 'Coin Magnet',  icon: '🧲', cost: [120],                  desc: 'Coins bank instantly when they land' },
   light:  { name: 'Reef Lights',  icon: '🔆', cost: [150, 400],             desc: '+15% coins per level' },
 };
 
@@ -445,7 +496,7 @@ function decorSprite(id, alt = false) {
   g.translate(1, 1); (alt ? D.draw2 : D.draw)(g);
   return SPR[k] = outline(c);
 }
-const COIN = bakeMap(['.yyy.', 'yywyy', 'yywyg', 'yyyyg', '.ggg.'], { y: '#ffd166', g: '#e09f00', w: '#fff8d6' });
+const COIN = bakeMap(['.yyyy.', 'yywyyy', 'ywyyyg', 'yyyyyg', 'yyyygg', '.gggg.'], { y: '#ffd166', g: '#e09f00', w: '#fff8d6' });
 const PEARL = bakeMap(['.ww.', 'whww', 'wwwp', '.pp.'], { w: '#fdfcf5', h: '#ffffff', p: '#e5c3d1' });
 const HEART = bakeMap(['h.h', 'hhh', '.h.'], { h: '#ff5d8f' });
 const EGG = bakeMap(['.ee.', 'eeeh', 'eeee', '.ee.'], { e: '#fff1c1', h: '#ffffff' });
@@ -459,7 +510,7 @@ Promise.all(Object.entries(ASSETS).map(([k, src]) => new Promise(res => {
 }))).then(() => { for (const k in SPR) delete SPR[k]; bgDirty = true; });
 
 // 3x5 bitmap glyphs for crisp floating numbers
-const GLYPH = { '0':'111101101101111','1':'010110010010111','2':'111001111100111','3':'111001111001111','4':'101101111001001','5':'111100111001111','6':'111100111101111','7':'111001001001001','8':'111101111101111','9':'111101111001111','+':'000010111010000','k':'100101110101101','.':'000000000000010' };
+const GLYPH = { '0':'111101101101111','1':'010110010010111','2':'111001111100111','3':'111001111001111','4':'101101111001001','5':'111100111001111','6':'111100111101111','7':'111001001001001','8':'111101111101111','9':'111101111001111','+':'000010111010000','k':'100101110101101','.':'000000000000010','x':'000101010101000' };
 function drawText(str, x, y, col) {
   x = Math.round(x - str.length * 2); y = Math.round(y);
   for (const pass of [1, 0]) [...str].forEach((ch, i) => {
@@ -471,7 +522,7 @@ function drawText(str, x, y, col) {
 
 // ---------------- State ----------------
 const KEY = 'pixelreef.v1';
-const fresh = () => ({ coins: 60, xp: 0, lvl: 1, fish: null, decor: null, up: { tank: 0, filter: 0, feeder: 0, magnet: 0, light: 0 }, dirt: 0, dex: {}, sound: 1, light: 0, t: Date.now() });
+const fresh = () => ({ coins: 100, xp: 0, lvl: 1, fish: null, decor: null, up: { tank: 0, filter: 0, feeder: 0, magnet: 0, light: 0 }, dirt: 0, dex: {}, sticker: {}, sound: 1, light: 0, t: Date.now(), tut: 0, day: '', streak: 0, goals: [] });
 let S = fresh();
 try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && typeof s === 'object') S = Object.assign(fresh(), s, { up: Object.assign(fresh().up, s.up) }); } catch (e) {}
 
@@ -479,7 +530,11 @@ let fish = [], decor = [], food = [], coins = [], poop = [], bubbles = [], parts
 let uid = 1, T = 0, beautyF = 0;
 const school = {};
 const grow = s => s.grow || 150;
-const cap = () => 6 + 3 * S.up.tank;
+const cap = () => 8 + 3 * S.up.tank;
+const dexCount = () => Object.values(S.dex).reduce((a, v) => a + v.length, 0);
+const incomeMult = () => (1 + .03 * dexCount()) * (1 + .15 * S.up.light);
+// expected coins per minute from one fish (drops every ~13s on average)
+const fishRate = (sp, v = 'normal') => { const s = SPECIES[sp]; return s.coin * (v === 'normal' ? 1 : 3) * 60 / 13 * (isFloor(s) ? .4 : 1) * incomeMult(); };
 const isFloor = s => s.kind === 'snail' || s.kind === 'crab';
 const isAdult = f => f.age >= grow(SPECIES[f.sp]);
 const vmult = f => f.v === 'normal' ? 1 : 3;
@@ -546,16 +601,85 @@ function dexAdd(sp, v, quiet) {
   const d = S.dex[sp] || (S.dex[sp] = []);
   if (d.includes(v)) return;
   d.push(v);
-  if (!quiet) toast('📖 New in Fishdex: ' + (v === 'normal' ? '' : VARIANTS[v].name + ' ') + SPECIES[sp].name + '!', 'pink');
+  if (quiet) return;
+  toast('📖 New in Fishdex: ' + (v === 'normal' ? '' : VARIANTS[v].name + ' ') + SPECIES[sp].name + '! Income +3%', 'pink');
+  if (!SPECIES[sp].visitor && d.length === Object.keys(VARIANTS).length && !S.sticker[sp]) {
+    S.sticker[sp] = 1;
+    const prize = SPECIES[sp].price * 2 + 100;
+    S.coins += prize;
+    setTimeout(() => { toast('🏅 Sticker page complete: every ' + SPECIES[sp].name + ' color! +' + prize + ' coins', 'gold'); SFX.level(); bump(); }, 1500);
+  }
 }
-const xpNeed = l => Math.round(30 * l ** 1.5);
+function bump() { const t = $('tankwrap'); t.classList.remove('bump'); void t.offsetWidth; t.classList.add('bump'); }
+
+// ---------------- Goals: a short tutorial, then 3 fresh goals every day ----------------
+const TUT = [
+  { ev: 'eat', n: 3, txt: 'Tap the water to feed your fish', rw: 10 },
+  { ev: 'collect', n: 5, txt: 'Tap or swipe 5 coins', rw: 15 },
+  { ev: 'pet', n: 1, txt: 'Tap a fish to say hi', rw: 10 },
+  { ev: 'buyFish', n: 1, txt: 'Buy a new fish in the Shop', rw: 25 },
+  { ev: 'place', n: 1, txt: 'Buy a decoration and place it', rw: 20 },
+  { ev: 'clean', n: 1, txt: 'Tap Clean to make the water sparkle', rw: 15 },
+];
+const DAILY = [
+  { ev: 'eat', n: 25, txt: 'Fish eat 25 pellets' },
+  { ev: 'collect', n: 40, txt: 'Collect 40 coins' },
+  { ev: 'pet', n: 6, txt: 'Pet your fish 6 times' },
+  { ev: 'clean', n: 2, txt: 'Clean the water twice' },
+  { ev: 'egg', n: 1, txt: 'Get a happy pair to lay an egg' },
+  { ev: 'earn', n: 300, txt: 'Earn 300 coins' },
+  { ev: 'buy', n: 2, txt: 'Buy 2 things in the Shop' },
+  { ev: 'photo', n: 1, txt: 'Take a photo of your tank' },
+  { ev: 'combo', n: 5, txt: 'Hit a x5 coin combo' },
+];
+const today = () => new Date().toDateString();
+function newDay() {
+  if (S.day === today()) return 0;
+  S.streak = S.day === new Date(Date.now() - 864e5).toDateString() ? S.streak + 1 : 1;
+  S.day = today();
+  S.goals = DAILY.slice().sort(() => Math.random() - .5).slice(0, 3).map(g => ({ ...g, p: 0, rw: 20 + S.lvl * 8 }));
+  const gift = 25 + 10 * Math.min(S.streak, 7);
+  S.coins += gift;
+  return gift;
+}
+function curGoal() {
+  if (S.tut < TUT.length) return { ...TUT[S.tut], p: S.tutP || 0, tut: 1 };
+  return S.goals.find(g => !g.claimed) || null;
+}
+function goal(ev, n = 1) {
+  if (S.tut < TUT.length && TUT[S.tut].ev === ev) S.tutP = Math.min(TUT[S.tut].n, (S.tutP || 0) + n);
+  for (const g of S.goals) if (g.ev === ev && !g.claimed) g.p = Math.min(g.n, ev === 'combo' ? Math.max(g.p, n) : g.p + n);
+  goalUI();
+}
+function claimGoal() {
+  const g = curGoal();
+  if (!g || g.p < g.n) return;
+  if (g.tut) { S.tut++; S.tutP = 0; } else g.claimed = 1;
+  S.coins += g.rw; gainXP(5);
+  floatText(W / 2, SURF + 24, '+' + g.rw); confetti(); SFX.level(); bump();
+  toast('🎯 Goal done! +' + g.rw + ' coins', 'gold');
+  if (!g.tut && S.goals.every(x => x.claimed)) setTimeout(() => toast('🌙 All daily goals done! New ones tomorrow.', 'pink'), 1200);
+  if (g.tut && S.tut === TUT.length) setTimeout(() => toast('🎉 You know the basics! Daily goals unlocked.', 'pink'), 1200);
+  goalUI();
+}
+function goalUI() {
+  const g = curGoal(), el = $('goal');
+  if (!g) { el.classList.remove('done'); $('goalIc').textContent = '🌙'; $('goalTxt').textContent = 'All goals done! New ones tomorrow.'; $('goalBar').style.width = '100%'; $('goalRw').textContent = ''; return; }
+  const done = g.p >= g.n;
+  el.classList.toggle('done', done);
+  $('goalIc').textContent = g.tut ? '👉' : '🎯';
+  $('goalTxt').textContent = g.txt + (done ? ' ✓' : g.n > 1 ? ' (' + Math.floor(g.p) + '/' + g.n + ')' : '');
+  $('goalBar').style.width = (g.p / g.n * 100) + '%';
+  $('goalRw').textContent = '🪙' + g.rw;
+}
+const xpNeed = l => Math.round(20 * l ** 1.45);
 function gainXP(n) {
   S.xp += n;
   while (S.xp >= xpNeed(S.lvl)) {
     S.xp -= xpNeed(S.lvl); S.lvl++;
     const un = [...Object.values(SPECIES), ...Object.values(DECOR)].filter(o => o.lvl === S.lvl).map(o => o.name);
     toast('⭐ Level ' + S.lvl + '!' + (un.length ? ' Unlocked: ' + un.join(', ') : ''), 'gold');
-    SFX.level(); confetti();
+    SFX.level(); confetti(); bump();
   }
 }
 const phase = () => (Date.now() / 1000 % DAY) / DAY;
@@ -575,19 +699,30 @@ function bubble(x, y, big) { if (bubbles.length < 220) bubbles.push({ x, y, r: b
 function dropFood(x, n = 2) { for (let i = 0; i < n && food.length < 40; i++) food.push({ x: clamp(x + rnd(-4, 4), 4, W - 4), y: SURF + rnd(-2, 2), ry: rnd(SAND + 2, H - 4), ph: rnd(0, 6), life: 18 }); }
 function dropCoin(f) {
   const s = SPECIES[f.sp], pearl = Math.random() < .04;
-  coins.push({ x: f.x, y: f.y, ry: rnd(SAND + 3, H - 4), v: Math.max(1, Math.round(s.coin * vmult(f) * (pearl ? 8 : 1))), pearl, life: 25, ph: rnd(0, 6), landed: 0 });
+  if (coins.length > 60) collect(coins[0], true);
+  coins.push({ x: f.x, y: f.y, ry: rnd(SAND + 3, H - 4), v: Math.max(1, Math.round(s.coin * vmult(f) * incomeMult() * (pearl ? 8 : 1))), pearl, ph: rnd(0, 6), landed: 0 });
 }
-function collect(c) {
+// Coins never vanish: tapping/swiping chains a combo bonus, otherwise they bank themselves after 40s.
+let combo = 0, comboT = -9;
+function collect(c, auto) {
   coins.splice(coins.indexOf(c), 1);
-  S.coins += c.v; gainXP(c.pearl ? 5 : 1);
-  floatText(c.x, c.y - 6, '+' + c.v, c.pearl ? '#ffd1f0' : '#ffd166');
-  spark(c.x, c.y, c.pearl ? 12 : 6, c.pearl ? '#ffffff' : '#ffd166');
-  (c.pearl ? SFX.pearl : SFX.coin)();
+  let v = c.v;
+  if (!auto) {
+    combo = T - comboT < 1.5 ? Math.min(10, combo + 1) : 1; comboT = T;
+    v += Math.floor(c.v * (combo - 1) * .1);
+    if (combo > 1) goal('combo', combo);
+    if (combo > 2) floatText(c.x + 8, c.y - 14, 'x' + combo, '#06d6a0');
+  }
+  S.coins += v; gainXP(c.pearl ? 5 : 1); goal('collect'); goal('earn', v);
+  floatText(c.x, c.y - 6, '+' + v, c.pearl ? '#ffd1f0' : '#ffd166');
+  spark(c.x, c.y, c.pearl ? 12 : auto ? 3 : 6, c.pearl ? '#ffffff' : '#ffd166');
+  parts.push({ k: 'pop', x: c.x, y: c.y, vx: 0, vy: 0, life: .35 });
+  if (c.pearl) { SFX.pearl(); bump(); } else SFX.coin(auto ? 1 : combo, auto ? .02 : .05);
 }
 function eat(f, p) {
   food.splice(food.indexOf(p), 1);
   f.hunger = Math.min(100, f.hunger + 30);
-  gainXP(1); SFX.chomp(); spark(p.x, p.y, 3, '#fff8d6', 8);
+  gainXP(1); SFX.chomp(); spark(p.x, p.y, 3, '#fff8d6', 8); goal('eat');
 }
 
 // ---------------- Fish brains ----------------
@@ -603,7 +738,7 @@ function updateFish(f, dt, dk) {
   if (f.puff > 0) f.puff -= dt;
 
   if (adult && f.hunger > 15) {
-    f.next -= dt * (f.mood > 50 ? 1 : .4) * (sleepy ? .5 : 1) * (1 + .15 * S.up.light) * (floor ? .4 : 1);
+    f.next -= dt * (f.mood > 50 ? 1 : .4) * (sleepy ? .5 : 1) * (floor ? .4 : 1);
     if (f.next <= 0) { f.next = rnd(10, 16); dropCoin(f); }
   }
   f.poopT -= dt;
@@ -668,7 +803,7 @@ function tryBreed() {
     const [a, b] = by[sp].sort(() => Math.random() - .5);
     hearts(a.x, a.y); hearts(b.x, b.y);
     eggs.push({ sp, v: rollVariant(a, b), x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, ry: rnd(SAND + 3, H - 5), t: 22 });
-    toast('💕 ' + a.name + ' & ' + b.name + ' laid an egg!', 'pink'); SFX.pet(); gainXP(15);
+    toast('💕 ' + a.name + ' & ' + b.name + ' laid an egg!', 'pink'); SFX.pet(); gainXP(15); goal('egg');
     return;
   }
 }
@@ -719,7 +854,7 @@ function update(dt) {
   for (let i = coins.length - 1; i >= 0; i--) {
     const c = coins[i];
     if (c.y < c.ry) { c.y = Math.min(c.ry, c.y + 16 * dt); c.x += Math.sin(T * 2 + c.ph) * .2; }
-    else { c.landed += dt; if (S.up.magnet && c.landed > .6) { collect(c); continue; } if ((c.life -= dt) <= 0) coins.splice(i, 1); }
+    else { c.landed += dt; if ((S.up.magnet && c.landed > .5) || c.landed > 40) collect(c, true); }
   }
   for (let i = eggs.length - 1; i >= 0; i--) {
     const e = eggs[i];
@@ -740,7 +875,7 @@ function update(dt) {
     if (d.id === 'helmet' && Math.random() < dt * .6) bubble(d.x + 3, d.y - 17);
     if (d.id === 'chest') {
       const was = d.open; d.open = d.tm % 14 > 12;
-      if (d.open && !was) { for (let i = 0; i < 8; i++) bubble(d.x + rnd(-6, 6), d.y - 10, 1); if (Math.random() < .35) coins.push({ x: d.x, y: d.y - 12, ry: d.y + 1, v: 2 + S.lvl, pearl: 0, life: 20, ph: 0, landed: 0 }); }
+      if (d.open && !was) { for (let i = 0; i < 8; i++) bubble(d.x + rnd(-6, 6), d.y - 10, 1); if (Math.random() < .35) coins.push({ x: d.x, y: d.y - 12, ry: d.y + 1, v: 2 + S.lvl, pearl: 0, ph: 0, landed: 0 }); }
     }
   }
   if (Math.random() < dt * .8) bubble(rnd(0, W), SAND + 2);
@@ -756,9 +891,9 @@ function update(dt) {
   if ((timers.save -= dt) <= 0) { timers.save = 5; save(); }
 }
 
-function offline(sec) {
-  if (sec < 60) return;
-  sec = Math.min(sec, 8 * 3600);
+function offline(sec, gift = 0) {
+  if (sec < 60 && !gift) return;
+  sec = sec < 60 ? 0 : Math.min(sec, 8 * 3600);
   let earn = 0;
   for (const f of fish) {
     const s = SPECIES[f.sp];
@@ -770,7 +905,8 @@ function offline(sec) {
   S.dirt = Math.min(100, S.dirt + sec * .02 * (1 - FILTER[S.up.filter]));
   S.coins += earn;
   const h = sec / 3600 | 0, m = (sec % 3600) / 60 | 0;
-  $('welcomeTxt').innerHTML = `You were away for <b>${h ? h + 'h ' : ''}${m}m</b>.<br>Your fish made <b style="color:var(--gold)">🪙 ${fmt(earn)}</b> while you were gone!` +
+  $('welcomeTxt').innerHTML = (sec ? `You were away for <b>${h ? h + 'h ' : ''}${m}m</b>.<br>Your fish made <b style="color:var(--gold)">🪙 ${fmt(earn)}</b> while you were gone!` : '') +
+    (gift ? `${sec ? '<br><br>' : ''}🎁 Daily gift: <b style="color:var(--gold)">🪙 ${gift}</b><br>🔥 ${S.streak}-day streak${S.streak < 7 ? ' (bigger gift tomorrow!)' : '!'}<br>🎯 3 new daily goals are waiting.` : '') +
     (S.dirt > 50 ? '<br><br>The water got a bit murky. Give it a clean 🧽' : '') + (fish.some(f => f.hunger < 30) ? '<br>Some fish look hungry 🍤' : '');
   openModal('welcome');
 }
@@ -849,7 +985,6 @@ function drawCritter(f) {
   ctx.restore();
 }
 function drawCoin(c) {
-  ctx.globalAlpha = c.y >= c.ry && c.life < 4 && Math.sin(T * 20) < 0 ? .3 : 1;
   if (c.pearl) ctx.drawImage(PEARL, Math.round(c.x - 3), Math.round(c.y - 3));
   else { const w = Math.max(1, Math.round(COIN.width * Math.abs(Math.cos(T * 4 + c.ph)))); ctx.drawImage(COIN, Math.round(c.x - w / 2), Math.round(c.y - 3), w, COIN.height); }
   ctx.globalAlpha = 1;
@@ -871,6 +1006,7 @@ function drawPart(p) {
   else if (p.k === 'txt') drawText(p.txt, p.x, p.y, p.col);
   else if (p.k === 'z') { const x = p.x | 0, y = p.y | 0; ctx.fillStyle = '#e0e7ff'; ctx.fillRect(x, y, 3, 1); ctx.fillRect(x + 1, y + 1, 1, 1); ctx.fillRect(x, y + 2, 3, 1); }
   else if (p.k === 'poop') R(ctx, p.x | 0, p.y | 0, 1, 2, '#6b5634');
+  else if (p.k === 'pop') { const r = Math.round((.35 - p.life) * 20) + 2; ctx.strokeStyle = '#fff3b0'; ctx.lineWidth = 1; ctx.strokeRect(Math.round(p.x - r) + .5, Math.round(p.y - r) + .5, r * 2, r * 2); }
   else if (p.k === 'ring') { const r = Math.round((1 - p.life) * 8); ctx.fillStyle = 'rgba(255,255,255,.6)'; ctx.fillRect(Math.round(p.x - r), Math.round(p.y), r * 2 + 1, 1); }
   ctx.globalAlpha = 1;
 }
@@ -970,7 +1106,7 @@ function tone(f, d = .12, type = 'sine', v = .15, when = 0, slide = 0, bus) {
   o.connect(g); g.connect(bus || master); o.start(t); o.stop(t + d + .05);
 }
 const SFX = {
-  coin: () => { tone(988, .07, 'square', .05); tone(1319, .14, 'square', .05, .06); },
+  coin: (c = 1, v = .05) => { const k = 2 ** ((c - 1) / 6); tone(988 * k, .07, 'square', v); tone(1319 * k, .14, 'square', v, .06); }, // pitch climbs with the combo
   pearl: () => [1047, 1319, 1568, 2093].forEach((f, i) => tone(f, .25, 'triangle', .08, i * .06)),
   plop: () => tone(520, .12, 'sine', .12, 0, .45),
   chomp: () => tone(300, .05, 'square', .04, 0, .6),
@@ -1022,15 +1158,13 @@ function hud() {
   $('pop').textContent = fish.length + '/' + cap();
   meter('wat', 100 - S.dirt, ['#e76f51', '#e9c46a', '#4cc9f0']);
   meter('hap', fish.length ? fish.reduce((a, f) => a + f.mood, 0) / fish.length : 0, ['#e76f51', '#e9c46a', '#ff8fc8']);
-  const dk = darkness();
-  $('clock').innerHTML = dk < .2 ? '☀️ <span class="lbl">Day</span>' : dk > .8 ? '🌙 <span class="lbl">Night</span>' : '🌅 <span class="lbl">Twilight</span>';
-  $('bClean').disabled = cleanCD > 0;
-  $('cleanTxt').textContent = cleanCD > 0 ? Math.ceil(cleanCD) + 's' : 'Clean';
+  const rate = fish.reduce((a, f) => a + (isAdult(f) && f.hunger > 15 ? fishRate(f.sp, f.v) * (f.mood > 50 ? 1 : .4) : 0), 0);
+  $('rate').textContent = '+' + (rate < 10 ? rate.toFixed(1) : fmt(rate)) + '/min';
   if (sel) panel();
 }
 
 // Fish panel
-function openPanel(f) { sel = f; sellArm = 0; $('fpName').value = f.name; $('fishPanel').classList.add('open'); panel(); }
+function openPanel(f) { const i = INFO[f.sp]; sel = f; sellArm = 0; $('fpName').value = f.name; $('fpNote').textContent = (i[0] === 'salt' ? '🌊 Saltwater' : '💧 Freshwater') + ' · ' + i[1]; $('fishPanel').classList.add('open'); panel(); }
 function closePanel() { sel = null; $('fishPanel').classList.remove('open'); }
 function panel() {
   const f = sel;
@@ -1058,6 +1192,7 @@ function petFish(f) {
   if (f.sp === 'puffer') { f.puff = 2.5; SFX.puff(); } else SFX.pet();
   hearts(f.x, f.y - 4, 2);
   if (f.petT <= 0) { f.petT = 10; f.mood = Math.min(100, f.mood + 6); gainXP(1); }
+  goal('pet');
   if (!isFloor(SPECIES[f.sp])) { f.vx += rnd(-20, 20); f.vy -= 10; }
 }
 
@@ -1089,7 +1224,7 @@ cv.addEventListener('pointerdown', e => {
   audio();
   const p = pos(e); Object.assign(pointer, p, { down: true });
   try { cv.setPointerCapture(e.pointerId); } catch (_) {}
-  if (placing) return place(p);
+  if (placing) { placeDrag = true; return; } // ghost follows the finger, drops on release
   if (mode === 'edit') { selDecor = hitDecor(p); drag = selDecor ? { dx: selDecor.x - p.x, dy: selDecor.y - p.y } : null; return banner(); }
   if (visitor && !visitor.tapped && Math.abs(p.x - visitor.x) < 12 + pad() && Math.abs(p.y - visitor.y) < 8 + pad()) return tapVisitor();
   if (collectAt(p)) return;
@@ -1103,7 +1238,8 @@ cv.addEventListener('pointermove', e => {
   if (drag && selDecor) { selDecor.x = clamp(p.x + drag.dx, 6, W - 6); selDecor.y = clamp(p.y + drag.dy, SAND + 4, H - 2); }
   else if (pointer.down && mode === 'play' && !placing) collectAt(p); // swipe to collect
 });
-const up = () => { pointer.down = false; drag = null; };
+let placeDrag = false;
+const up = () => { pointer.down = false; drag = null; if (placing && placeDrag) place(pointer); placeDrag = false; };
 cv.addEventListener('pointerup', up);
 cv.addEventListener('pointercancel', up);
 cv.addEventListener('pointerleave', () => { if (!pointer.down) pointer.x = -99; });
@@ -1114,13 +1250,13 @@ function place(p) {
   if (decor.length >= 30) { toast('Tank is full of decor! Sell something first.'); placing = null; return banner(); }
   S.coins -= D.price;
   const d = { id: placing, x: clamp(p.x, 6, W - 6), y: clamp(p.y, SAND + 4, H - 2), ph: rnd(0, 6), tm: 0 };
-  decor.push(d); spark(d.x, d.y - 4, 10, '#fff8d6'); SFX.buy(); gainXP(Math.max(1, D.price / 10 | 0));
+  decor.push(d); spark(d.x, d.y - 4, 10, '#fff8d6'); SFX.buy(); gainXP(Math.max(1, D.price / 10 | 0)); goal('place'); goal('buy');
   toast(D.name + ' placed! ✨'); placing = null; banner();
 }
 function banner() {
   const b = $('banner'), sellB = $('bannerSell');
   $('bEdit').classList.toggle('on', mode === 'edit');
-  if (placing) { b.style.display = 'flex'; $('bannerTxt').textContent = 'Tap the tank to place ' + DECOR[placing].name; sellB.style.display = 'none'; $('bannerBtn').textContent = 'Cancel'; }
+  if (placing) { b.style.display = 'flex'; $('bannerTxt').textContent = 'Tap or drag in the tank to place ' + DECOR[placing].name; sellB.style.display = 'none'; $('bannerBtn').textContent = 'Cancel'; }
   else if (mode === 'edit') {
     b.style.display = 'flex';
     $('bannerTxt').textContent = selDecor ? DECOR[selDecor.id].name + ': drag to move' : 'Tap decor to select, drag to move';
@@ -1142,18 +1278,41 @@ $('bannerSell').onclick = () => {
 $('bFeed').onclick = () => { audio(); for (let i = 0; i < 6; i++) dropFood(rnd(16, W - 16), 1); SFX.plop(); };
 $('bClean').onclick = () => {
   audio();
-  if (cleanCD > 0) return;
-  const was = S.dirt; S.dirt = 0; poop.length = 0; cleanCD = 30;
+  const was = S.dirt; S.dirt = 0; poop.length = 0;
   for (let i = 0; i < 60; i++) bubble(rnd(4, W - 4), rnd(SAND - 20, H), 1);
-  SFX.clean(); gainXP(was > 30 ? 5 : 1);
-  toast(was > 30 ? '✨ Sparkling clean! Fish feel better.' : '✨ Already pretty clean!');
+  SFX.clean(); goal('clean');
+  if (was > 20) { gainXP(4); toast('✨ Sparkling clean! Fish feel better.'); } else toast('✨ Already sparkling!');
+};
+let flashT = 0;
+$('bPhoto').onclick = () => {
+  audio();
+  const k = 4, out = canvas(W * k + 48, H * k + 104), g = out.getContext('2d');
+  g.imageSmoothingEnabled = false;
+  g.fillStyle = '#24170e'; g.fillRect(0, 0, out.width, out.height);
+  g.fillStyle = '#5c4330'; g.fillRect(12, 12, out.width - 24, H * k + 24);
+  g.drawImage(cv, 24, 24, W * k, H * k);
+  g.textBaseline = 'middle'; g.font = '700 34px "Pixelify Sans", monospace'; g.fillStyle = '#ffd166';
+  g.fillText('Pixel Reef', 28, H * k + 70);
+  g.textAlign = 'right'; g.font = '600 26px "Pixelify Sans", monospace'; g.fillStyle = '#9fb3c8';
+  g.fillText(fish.length + ' fish · LV ' + S.lvl, out.width - 28, H * k + 70);
+  flashT = .5; tone(1800, .05, 'square', .05); tone(1200, .08, 'square', .04, .05);
+  out.toBlob(async b => {
+    const file = new File([b], 'pixel-reef.png', { type: 'image/png' });
+    try {
+      if (navigator.canShare && navigator.canShare({ files: [file] })) await navigator.share({ files: [file], title: 'My Pixel Reef' });
+      else { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'pixel-reef.png'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
+      toast('📸 Snap! Photo saved.'); goal('photo');
+    } catch (e) { /* share sheet closed */ }
+  });
 };
 $('bShop').onclick = () => { audio(); renderShop(); openModal('shop'); };
 $('bEdit').onclick = () => { audio(); placing = null; mode = mode === 'edit' ? 'play' : 'edit'; selDecor = null; closePanel(); banner(); };
 $('bDex').onclick = () => { audio(); renderDex(); openModal('dex'); };
 $('bLight').onclick = () => { S.light = (S.light + 1) % 3; lightBtn(); };
 $('bSound').onclick = () => { audio(); S.sound = S.sound ? 0 : 1; if (master) master.gain.value = S.sound ? .5 : 0; soundBtn(); };
-function lightBtn() { $('lightIc').textContent = ['💡', '☀️', '🌙'][S.light]; $('lightTxt').textContent = ['Auto', 'Day', 'Night'][S.light]; }
+function lightBtn() { $('lightIc').textContent = ['💡', '☀️', '🌙'][S.light]; $('bLight').title = 'Light: ' + ['auto day/night', 'always day', 'always night'][S.light]; }
+$('goal').onclick = claimGoal;
+$('goalClaim').onclick = e => { e.stopPropagation(); claimGoal(); };
 function soundBtn() { $('soundIc').textContent = S.sound ? '🔊' : '🔇'; }
 
 // Shop
@@ -1163,12 +1322,13 @@ function fitSprite(g, img, w, h, bottom) {
   g.drawImage(img, (w - img.width * s) / 2 | 0, bottom ? h - 2 - img.height * s : (h - img.height * s) / 2 | 0, img.width * s, img.height * s);
 }
 const artSprite = img => cardArt((g, w, h) => fitSprite(g, img, w, h));
-function card({ art, name, price, desc, lock, poor, onClick }) {
+function card({ art, name, price, desc, tag, lock, poor, onClick }) {
   const el = document.createElement('div');
   el.className = 'card' + (lock ? ' lock' : '') + (poor ? ' poor' : '');
   el.tabIndex = 0; el.setAttribute('role', 'button');
   if (typeof art === 'string') { const a = document.createElement('div'); a.className = 'art'; a.textContent = art; el.append(a); } else el.append(art);
   for (const [cls, txt] of [['nm', name], ['pr', price], ['ds', desc]]) { const d = document.createElement('div'); d.className = cls; d.textContent = txt; el.append(d); }
+  if (tag) { const t = document.createElement('div'); t.className = 'tag' + (tag === 'salt' ? ' salt' : ''); t.textContent = tag === 'salt' ? '🌊 Saltwater' : '💧 Freshwater'; el.append(t); }
   el.onclick = onClick;
   el.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } };
   return el;
@@ -1184,7 +1344,8 @@ function renderShop() {
   if (shopTab === 'fish') for (const [id, s] of Object.entries(SPECIES)) {
     if (s.visitor) continue;
     const lock = S.lvl < s.lvl;
-    grid.append(card({ art: artSprite(fishSprite(id)), name: s.name, price: lock ? '🔒 LV ' + s.lvl : '🪙 ' + s.price, desc: s.desc + ' +' + s.coin + '/coin', lock, poor: !lock && S.coins < s.price, onClick: () => buyFish(id) }));
+    const r = fishRate(id);
+    grid.append(card({ art: artSprite(fishSprite(id)), name: s.name, price: lock ? '🔒 LV ' + s.lvl : '🪙 ' + s.price, desc: s.desc + '\n≈' + (r < 10 ? r.toFixed(1) : Math.round(r)) + ' coins/min · ' + Math.max(1, Math.round(s.price / r)) + 'm payback', tag: INFO[id][0], lock, poor: !lock && S.coins < s.price, onClick: () => buyFish(id) }));
   }
   if (shopTab === 'decor') for (const [id, D] of Object.entries(DECOR)) {
     const lock = S.lvl < D.lvl;
@@ -1203,7 +1364,7 @@ function buyFish(id) {
   if (S.coins < s.price) { toast('Need ' + (s.price - S.coins) + ' more coins'); return SFX.error(); }
   S.coins -= s.price;
   const f = newFish(id, 'normal', isFloor(s) ? {} : { y: SURF + 6 });
-  fish.push(f); dexAdd(id, 'normal'); gainXP(Math.max(1, s.price / 5 | 0));
+  fish.push(f); dexAdd(id, 'normal'); gainXP(Math.max(1, s.price / 5 | 0)); goal('buyFish'); goal('buy');
   for (let i = 0; i < 12; i++) bubble(f.x + rnd(-6, 6), f.y + rnd(0, 6), 1);
   SFX.buy(); toast('Welcome, ' + f.name + ' the ' + s.name + '! 💖'); closeModals();
 }
@@ -1217,7 +1378,7 @@ function buyUpgrade(id) {
   const U = UPGRADES[id], lv = S.up[id];
   if (lv >= U.cost.length) return;
   if (S.coins < U.cost[lv]) { toast('Need ' + (U.cost[lv] - S.coins) + ' more coins'); return SFX.error(); }
-  S.coins -= U.cost[lv]; S.up[id]++; gainXP(10); SFX.buy(); toast(U.icon + ' ' + U.name + ' upgraded!'); renderShop();
+  S.coins -= U.cost[lv]; S.up[id]++; gainXP(10); SFX.buy(); goal('buy'); toast(U.icon + ' ' + U.name + ' upgraded!'); renderShop();
 }
 
 // Fishdex
@@ -1233,14 +1394,14 @@ function renderDex() {
     dots.innerHTML = vs.map(v => `<span title="${VARIANTS[v].name}" style="color:${found.includes(v) ? VCOL[v] : '#2a3a5f'}">◆</span>`).join('');
     grid.append(el);
   }
-  $('dexCount').textContent = got + ' / ' + total + ' found. Breed happy pairs for rare colors!';
+  $('dexCount').textContent = got + ' / ' + total + ' found · income +' + Math.round(dexCount() * 3) + '% · fill a row of colors for a sticker prize!';
 }
 
 // Layout: pick an internal resolution that matches the screen shape, then scale up crisp.
 function fit() {
   const small = innerWidth <= 640, frame = small ? 14 : 26;
   const aw = Math.max(160, innerWidth - (small ? 24 : 32) - frame);
-  const ah = Math.max(140, innerHeight - $('hud').offsetHeight - $('bar').offsetHeight - (small ? 30 : 44) - frame);
+  const ah = Math.max(140, innerHeight - $('hud').offsetHeight - $('goal').offsetHeight - $('bar').offsetHeight - (small ? 36 : 52) - frame);
   const asp = aw / ah, oW = W, oH = H, oS = SAND;
   // Short side shrinks on small screens so fish stay big enough to tap (~2x scale minimum).
   if (asp >= 1) { H = clamp(Math.round(ah / 2), 130, 180); W = clamp(Math.round(H * asp), 240, 400); }
@@ -1266,7 +1427,7 @@ addEventListener('keydown', e => {
   else closePanel();
 });
 
-let hiddenAt = 0, last = performance.now(), hudT = 0;
+let hiddenAt = 0, last = performance.now(), hudT = 0, dayT = 30;
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) { hiddenAt = Date.now(); save(); }
   else if (hiddenAt) { offline((Date.now() - hiddenAt) / 1000); hiddenAt = 0; last = performance.now(); }
@@ -1276,8 +1437,9 @@ addEventListener('pagehide', save);
 function frame(now) {
   const dt = Math.min(.05, (now - last) / 1000); last = now;
   update(dt);
-  if (cleanCD > 0) cleanCD = Math.max(0, cleanCD - dt);
   render();
+  if (flashT > 0) { ctx.fillStyle = `rgba(255,255,255,${flashT})`; ctx.fillRect(0, 0, W, H); flashT = Math.max(0, flashT - dt * 2); }
+  if ((dayT -= dt) <= 0) { dayT = 30; const g = newDay(); if (g) { toast('🎁 New day! Gift +' + g + ' coins and 3 new goals', 'gold'); goalUI(); } }
   if ((hudT -= dt) <= 0) { hudT = .25; hud(); }
   requestAnimationFrame(frame);
 }
@@ -1285,13 +1447,10 @@ function frame(now) {
 // ---------------- Boot ----------------
 fit();
 ALGAE = makeAlgae(); snow = makeSnow();
-const returning = load();
-lightBtn(); soundBtn(); banner(); hud();
-if (returning) offline((Date.now() - S.t) / 1000);
-else {
-  setTimeout(() => toast('🐟 Welcome to Pixel Reef! Tap the water to feed your fish.'), 600);
-  setTimeout(() => toast('🪙 Tap or swipe coins to collect them.'), 4200);
-}
+const returning = load(), gift = newDay();
+lightBtn(); soundBtn(); banner(); hud(); goalUI();
+if (returning) offline((Date.now() - S.t) / 1000, gift);
+else setTimeout(() => toast('🐟 Welcome to Pixel Reef! Follow the 👉 tips above the tank.'), 600);
 requestAnimationFrame(frame);
 </script>
 </body>

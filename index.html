@@ -8,9 +8,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Tiny5&display=swap" rel="stylesheet">
 <style>
+/* Tiny5's "8" reads like "$" at small sizes, so digits come from Jersey 10 (same Google Fonts family pool). */
+@font-face{font-family:'ReefDigits';src:url(https://fonts.gstatic.com/s/jersey10/v4/GftH7vZKsggXMf9n_J5n_5jh.woff2) format('woff2');unicode-range:U+0030-0039;size-adjust:118%;font-display:swap}
 :root{--ink:#f4f1de;--mute:#9fb3c8;--panel:#16213e;--panel2:#1f2f57;--edge:#0a0f1f;--hi:#3d5a99;--gold:#ffd166;--coral:#ef476f;--mint:#06d6a0;--sky:#4cc9f0}
 *{box-sizing:border-box}
-html,body{margin:0;height:100%;background:radial-gradient(ellipse at 50% 0%,#14234a,#070b16 70%);color:var(--ink);font-family:'Tiny5',monospace;font-synthesis:none;font-variant-ligatures:none;font-feature-settings:'liga' 0,'clig' 0;overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:radial-gradient(ellipse at 50% 0%,#14234a,#070b16 70%);color:var(--ink);font-family:'ReefDigits','Tiny5',monospace;font-synthesis:none;font-variant-ligatures:none;font-feature-settings:'liga' 0,'clig' 0;overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 @supports (height:100dvh){html,body{height:100dvh}}
 body{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:max(8px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
 .px{background:var(--panel);border:3px solid var(--edge);box-shadow:inset 0 0 0 2px var(--hi),0 4px 0 var(--edge);border-radius:4px}
@@ -146,7 +148,7 @@ body.zen #goal{display:none}
   <div class="px chip" title="Level and XP"><div class="stat"><span>LV <span id="lvl">1</span></span><div class="meter"><i id="xpb"></i></div><small id="nextUn"></small></div></div>
   <div class="px chip" id="popChip" title="Fish in tank / capacity. Tap to find stressed fish"><span class="ico">🐟</span><div class="stat"><span id="pop">0/8</span><small id="popNote">fish</small></div></div>
   <div class="px chip" title="Water clarity: clean it when it turns green"><span class="ico">💧</span><div class="stat"><small id="watLbl">Water</small><div class="meter"><i id="wat"></i></div></div></div>
-  <div class="px chip" title="Average fish happiness"><span class="ico">💗</span><div class="stat"><small>Mood</small><div class="meter"><i id="hap"></i></div></div></div>
+  <div class="px chip" title="Average fish happiness"><span class="ico">💗</span><div class="stat"><small id="hapLbl">Mood</small><div class="meter"><i id="hap"></i></div></div></div>
 </div>
 
 <div id="goal" class="px" role="status"><span id="goalIc">🎯</span><span class="gtxt" id="goalTxt"></span><div class="meter"><i id="goalBar"></i></div><b id="goalRw"></b><button class="btn sm" id="goalClaim">Claim</button></div>
@@ -661,7 +663,7 @@ function tankUI() {
   const o = S.other, ofish = o ? o.fish.filter(f => SPECIES[f.sp]) : [];
   const orate = ofish.reduce((a, f) => a + (f.age >= grow(SPECIES[f.sp]) ? fishRate(f.sp, f.v) : 0), 0);
   const alert = ofish.some(f => f.hunger < 30 || (INFO[f.sp][0] !== 'any' && o && INFO[f.sp][0] !== o.water));
-  t.textContent = (S.water === 'salt' ? '🌊 Reef' : '💧 Fresh') + ' ⇄ ' + (S.water === 'salt' ? '💧' : '🌊') + '+' + fmtRate(orate) + '/min' + (alert ? ' ❗' : '');
+  t.textContent = (S.water === 'salt' ? '🌊 Reef' : '💧 Fresh') + ' ⇄ ' + (S.water === 'salt' ? '💧 Fresh ' : '🌊 Reef ') + '+' + fmtRate(orate) + '/min' + (alert ? ' ❗' : '');
   t.title = 'Switch to your ' + (S.water === 'salt' ? 'Freshwater' : 'Reef') + ' tank';
 }
 
@@ -1005,7 +1007,7 @@ function catchUp(sec) {
   for (const f of fish) {
     f.age += sec;
     if (isAdult(f)) earn += fishRate(f.sp, f.v) / 60 * sec * .25 * (wrongWater(f) ? .4 : 1);
-    f.hunger = Math.max(15, f.hunger - sec * .08);
+    f.hunger = Math.max(22, f.hunger - sec * .08);
   }
   S.dirt = Math.min(100, S.dirt + sec * .02 * (1 - FILTER[S.up.filter]));
   earn = Math.floor(earn);
@@ -1015,10 +1017,10 @@ function catchUp(sec) {
 function offline(sec, gift = 0) {
   if (sec < 60 && !gift) return;
   sec = sec < 60 ? 0 : Math.min(sec, 8 * 3600);
-  const live = liveRate(fish), earn = catchUp(sec);
+  const earn = catchUp(sec), used = sec ? earn / (sec / 60) / .25 : 0;
   if (S.zen) return;
   const h = sec / 3600 | 0, m = (sec % 3600) / 60 | 0;
-  $('welcomeTxt').innerHTML = (sec ? `You were away for <b>${h ? h + 'h ' : ''}${m}m</b>.<br>Your fish made <b style="color:var(--gold);font-size:22px">🪙 ${fmt(earn)}</b> while you were gone!<br><small>Away time pays 25% of your live rate (+${fmtRate(live)}/min → ~${fmtRate(live / 4)}/min), up to 8h.${S.reef ? ' Your other tank catches up when you visit it.' : ''}</small>` : '') +
+  $('welcomeTxt').innerHTML = (sec ? `You were away for <b>${h ? h + 'h ' : ''}${m}m</b>.<br>Your fish made <b style="color:var(--gold);font-size:22px">🪙 ${fmt(earn)}</b> while you were gone!<br><small>${Math.round(sec / 60)} min × ${fmtRate(used)}/min × 25% away rate = ${fmt(earn)} (max 8h).${S.reef ? ' Your other tank catches up when you visit it.' : ''}</small>` : '') +
     (gift ? `${sec ? '<br><br>' : ''}🎁 Daily gift: <b style="color:var(--gold);font-size:22px">🪙 ${gift}</b><br>🔥 ${S.streak}-day streak${S.streak < 7 ? ' (bigger gift tomorrow!)' : '!'}<br>🎯 3 new daily goals are waiting.` : '') +
     (S.dirt > 50 ? '<br><br>The water got a bit murky. Give it a clean 🧽' : '') + (fish.some(f => f.hunger < 30) ? '<br>Some fish look hungry 🍤' : '');
   openModal('welcome');
@@ -1375,11 +1377,13 @@ function hud() {
   $('popNote').textContent = wrong ? wrong + ' stressed −' + fmtRate(lost) + '/m' : crowded() ? 'crowded' : S.reef ? (S.water === 'salt' ? 'reef' : 'fresh') : 'fish';
   $('popNote').classList.toggle('warn', wrong > 0 || crowded());
   meter('wat', 100 - S.dirt, ['#e76f51', '#e9c46a', '#4cc9f0']);
-  $('watLbl').textContent = S.dirt > 60 ? 'Murky -20%' : 'Water';
+  $('watLbl').textContent = S.dirt > 60 ? 'Murky -20%' : 'Water ' + Math.round(100 - S.dirt) + '%';
   $('watLbl').classList.toggle('warn', S.dirt > 60);
   const nx = [...Object.values(SPECIES).filter(o => !o.visitor), ...Object.values(DECOR), ...(S.reef ? [] : [{ name: 'Reef Tank', lvl: 3 }])].filter(o => o.lvl > S.lvl).sort((a, b) => a.lvl - b.lvl)[0];
   $('nextUn').textContent = nx ? '→ ' + nx.name : 'all unlocked!';
-  meter('hap', fish.length ? fish.reduce((a, f) => a + f.mood, 0) / fish.length : 0, ['#e76f51', '#e9c46a', '#ff8fc8']);
+  const mood = fish.length ? fish.reduce((a, f) => a + f.mood, 0) / fish.length : 0;
+  meter('hap', mood, ['#e76f51', '#e9c46a', '#ff8fc8']);
+  $('hapLbl').textContent = 'Mood ' + Math.round(mood) + '%';
   $('rate').textContent = '+' + fmtRate(liveRate(fish)) + '/min';
   tankUI();
   if (sel) panel();

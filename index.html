@@ -1,0 +1,1298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Pixel Reef</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#f4f1de;--mute:#9fb3c8;--panel:#16213e;--panel2:#1f2f57;--edge:#0a0f1f;--hi:#3d5a99;--gold:#ffd166;--coral:#ef476f;--mint:#06d6a0;--sky:#4cc9f0}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:radial-gradient(ellipse at 50% 0%,#14234a,#070b16 70%);color:var(--ink);font-family:'Pixelify Sans',monospace;overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+body{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:10px 16px}
+#hud{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;width:100%;max-width:1200px}
+.px{background:var(--panel);border:3px solid var(--edge);box-shadow:inset 0 0 0 2px var(--hi),0 4px 0 var(--edge);border-radius:4px}
+.chip{display:flex;align-items:center;gap:6px;padding:4px 10px;font-size:16px;font-weight:600;min-height:36px}
+.chip #coins{color:var(--gold);min-width:3ch}
+.meter{width:70px;height:8px;background:#0a0f1f;border:1px solid #000;position:relative;overflow:hidden}
+.meter i{position:absolute;left:0;top:0;bottom:0;width:50%;background:var(--mint);transition:width .3s,background .3s}
+#lvl{color:var(--gold)}
+#tankwrap{position:relative;padding:10px;background:linear-gradient(#3b2a1e,#24170e);border:3px solid var(--edge);box-shadow:inset 0 0 0 3px #5c4330,0 8px 0 var(--edge),0 24px 70px rgba(0,0,0,.65);border-radius:6px}
+canvas#c{display:block;image-rendering:pixelated;image-rendering:crisp-edges;cursor:pointer;touch-action:none}
+#bar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.btn{font:inherit;font-size:14px;font-weight:600;color:var(--ink);background:var(--panel2);border:3px solid var(--edge);box-shadow:inset 0 -4px 0 rgba(0,0,0,.35),inset 0 0 0 2px var(--hi);border-radius:4px;padding:6px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:64px}
+.btn .ic{font-size:20px;line-height:1}
+.btn:hover{filter:brightness(1.15)}
+.btn:active{transform:translateY(2px);box-shadow:inset 0 0 0 2px var(--hi)}
+.btn.on{background:#2d6a4f;box-shadow:inset 0 -4px 0 rgba(0,0,0,.35),inset 0 0 0 2px var(--mint)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.sm{flex-direction:row;min-width:0;padding:4px 10px;font-size:13px}
+.btn:focus-visible,.card:focus-visible,.tab:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+#toasts{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none;z-index:7;width:max-content;max-width:calc(100% - 24px)}
+.toast{padding:6px 14px;font-size:15px;text-align:center;animation:tin .25s ease-out,tout .4s ease-in 2.6s forwards}
+.toast.gold{background:#5c4a12;box-shadow:inset 0 0 0 2px var(--gold),0 4px 0 var(--edge)}
+.toast.pink{background:#5a1f3d;box-shadow:inset 0 0 0 2px #ff8fc8,0 4px 0 var(--edge)}
+@keyframes tin{from{transform:translateY(-8px);opacity:0}}
+@keyframes tout{to{opacity:0;transform:translateY(-6px)}}
+#banner{position:absolute;left:50%;top:18px;transform:translateX(-50%);padding:6px 8px 6px 12px;display:none;gap:8px;align-items:center;font-size:14px;z-index:5;white-space:nowrap}
+.modal{position:fixed;inset:0;background:rgba(5,8,18,.72);display:none;align-items:center;justify-content:center;z-index:40;padding:16px}
+.modal.open{display:flex}
+.sheet{width:min(880px,100%);max-height:86vh;display:flex;flex-direction:column;padding:14px}
+.sheet h2{margin:0 0 10px;font-size:22px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.sheet h2 small{font-size:14px;color:var(--mute);font-weight:400;margin-right:auto}
+.x{font:inherit;background:none;border:0;color:var(--ink);font-size:22px;cursor:pointer;padding:0 4px}
+.tabs{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.tab{font:inherit;font-weight:600;font-size:14px;color:var(--ink);background:#0f1730;border:2px solid var(--edge);padding:5px 12px;cursor:pointer;border-radius:3px}
+.tab.on{background:var(--hi)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(136px,1fr));gap:10px;overflow:auto;padding:2px}
+.card{background:#0f1730;border:2px solid var(--edge);box-shadow:inset 0 0 0 2px #24365f;padding:8px;text-align:center;cursor:pointer;border-radius:3px;display:flex;flex-direction:column;align-items:center;gap:4px}
+.card:hover{box-shadow:inset 0 0 0 2px var(--sky)}
+.card canvas,.card .art{width:96px;height:64px;image-rendering:pixelated;background:linear-gradient(#1d6fa3,#0b2545);border:2px solid var(--edge)}
+.card .art{display:flex;align-items:center;justify-content:center;font-size:34px}
+.card .nm{font-weight:700;font-size:15px}
+.card .pr{color:var(--gold);font-size:14px}
+.card .ds{color:var(--mute);font-size:12px;line-height:1.25}
+.card.lock{opacity:.55;cursor:default}
+.card.lock canvas{filter:brightness(0) opacity(.6)}
+.card.poor .pr{color:var(--coral)}
+.vdots{letter-spacing:3px;font-size:13px}
+#fishPanel{position:absolute;right:18px;top:18px;width:224px;padding:10px;display:none;z-index:6;font-size:14px}
+#fishPanel.open{display:block}
+#fishPanel input{font:inherit;font-size:17px;font-weight:700;width:100%;background:#0a0f1f;color:var(--ink);border:2px solid var(--edge);padding:2px 6px}
+.row{display:flex;justify-content:space-between;align-items:center;margin:6px 0;gap:8px}
+.row .meter{width:110px}
+#fpSp{color:var(--sky)}
+#welcome .sheet{width:min(440px,100%);text-align:center;font-size:17px;line-height:1.4}
+#welcome .btn{margin:6px auto 0}
+@supports (height:100dvh){html,body{height:100dvh}}
+body{padding:max(8px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+@media (max-width:640px){
+ body{gap:8px;padding-left:max(10px,env(safe-area-inset-left));padding-right:max(10px,env(safe-area-inset-right))}
+ #hud,#bar{gap:4px;flex-wrap:nowrap;width:100%}
+ .btn{flex:1;min-width:0;padding:4px 2px;font-size:10px;border-width:2px}
+ .btn .ic{font-size:18px}
+ .chip{font-size:12px;padding:2px 5px;min-height:30px;gap:3px;border-width:2px;flex:1 1 auto;justify-content:center}
+ .meter{width:26px}
+ #clock .lbl{display:none}
+ #tankwrap{padding:5px;border-width:2px}
+ #fishPanel{left:8px;right:8px;width:auto;top:auto;bottom:8px}
+ #banner{top:8px;font-size:12px;white-space:normal;width:calc(100% - 16px);justify-content:space-between}
+ .grid{grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:6px}
+ .card canvas,.card .art{width:72px;height:48px}
+ .sheet{padding:10px;max-height:92dvh}
+ .toast{font-size:13px}
+}
+@media (max-height:500px) and (orientation:landscape){
+ body{gap:4px;padding-top:max(4px,env(safe-area-inset-top));padding-bottom:max(4px,env(safe-area-inset-bottom))}
+ .chip{min-height:26px;font-size:13px;padding:1px 7px}
+ .btn{flex-direction:row;gap:4px;padding:3px 8px;font-size:12px}
+ .btn .ic{font-size:16px}
+ #tankwrap{padding:4px}
+ #fishPanel{left:auto;right:8px;top:8px;bottom:auto;width:200px;font-size:12px;padding:6px}
+}
+</style>
+</head>
+<body>
+<div id="hud">
+  <div class="px chip" title="Coins">🪙 <span id="coins">0</span></div>
+  <div class="px chip" title="Level and XP">LV <span id="lvl">1</span><div class="meter"><i id="xpb"></i></div></div>
+  <div class="px chip" title="Fish in tank / capacity">🐟 <span id="pop">0/6</span></div>
+  <div class="px chip" title="Water clarity">💧<div class="meter"><i id="wat"></i></div></div>
+  <div class="px chip" title="Average happiness">💗<div class="meter"><i id="hap"></i></div></div>
+  <div class="px chip" title="Time of day" id="clock">☀️ <span class="lbl">Day</span></div>
+</div>
+
+<div id="tankwrap">
+  <canvas id="c" width="320" height="180" aria-label="Aquarium tank. Tap the water to drop food, tap coins to collect them, tap a fish to see it."></canvas>
+  <div id="banner" class="px"><span id="bannerTxt"></span><button class="btn sm" id="bannerSell" style="display:none">Sell</button><button class="btn sm" id="bannerBtn">Done</button></div>
+  <div id="fishPanel" class="px" role="dialog" aria-label="Fish details">
+    <input id="fpName" maxlength="14" aria-label="Fish name">
+    <div class="row"><span id="fpSp"></span><span id="fpStage"></span></div>
+    <div class="row">Hunger<div class="meter"><i id="fpHun"></i></div></div>
+    <div class="row">Mood<div class="meter"><i id="fpMood"></i></div></div>
+    <div class="row"><span>Age</span><span id="fpAge"></span></div>
+    <div class="row"><button class="btn sm" id="fpSell">Sell</button><button class="btn sm" id="fpClose">Close</button></div>
+  </div>
+  <div id="toasts" aria-live="polite"></div>
+</div>
+
+<div id="bar">
+  <button class="btn" id="bFeed" title="Drop a pinch of food"><span class="ic">🍤</span>Feed</button>
+  <button class="btn" id="bClean" title="Clean the water"><span class="ic">🧽</span><span id="cleanTxt">Clean</span></button>
+  <button class="btn" id="bShop" title="Buy fish, decor and upgrades"><span class="ic">🛒</span>Shop</button>
+  <button class="btn" id="bEdit" title="Move or sell decorations"><span class="ic">🪴</span>Decor</button>
+  <button class="btn" id="bDex" title="Your collection"><span class="ic">📖</span>Fishdex</button>
+  <button class="btn" id="bLight" title="Light: auto / day / night"><span class="ic" id="lightIc">💡</span><span id="lightTxt">Auto</span></button>
+  <button class="btn" id="bSound" title="Sound on/off"><span class="ic" id="soundIc">🔊</span>Sound</button>
+</div>
+
+<div class="modal" id="shop"><div class="sheet px">
+  <h2>Reef Shop <small id="shopCoins"></small><button class="x" data-close aria-label="Close">✕</button></h2>
+  <div class="tabs" id="shopTabs"></div>
+  <div class="grid" id="shopGrid"></div>
+</div></div>
+
+<div class="modal" id="dex"><div class="sheet px">
+  <h2>Fishdex <small id="dexCount"></small><button class="x" data-close aria-label="Close">✕</button></h2>
+  <div class="grid" id="dexGrid"></div>
+</div></div>
+
+<div class="modal" id="welcome"><div class="sheet px">
+  <h2 style="justify-content:center">Welcome back!</h2>
+  <p id="welcomeTxt"></p>
+  <button class="btn" data-close>Collect</button>
+</div></div>
+
+<script>
+'use strict';
+/* ============================================================
+   PIXEL REEF — single-file aquarium game
+   Art is generated from tiny pixel maps below. To swap in real
+   assets later, add paths to ASSETS; anything listed there replaces
+   the built-in pixel art automatically.
+   ============================================================ */
+
+// ---- Assets hook. Keys: fish_<species>, fry_<species>, decor_<id>, bg. Fish art must face RIGHT.
+const ASSETS = {
+  // fish_guppy: 'assets/guppy.png',
+  // decor_castle: 'assets/castle.png',
+  // bg: 'assets/background.png',
+};
+
+// Internal pixel resolution adapts to screen shape (landscape ~320x180, portrait ~170x300). SAND = top of sand.
+let W = 320, H = 180, SAND = 150;
+const SURF = 12, DAY = 480; // DAY = seconds per full day/night cycle
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+ctx.imageSmoothingEnabled = false;
+const $ = id => document.getElementById(id);
+const rnd = (a, b) => a + Math.random() * (b - a);
+const pick = a => a[Math.random() * a.length | 0];
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const lerp = (a, b, t) => a + (b - a) * t;
+const hx = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+const toHex = c => '#' + c.map(v => clamp(Math.round(v), 0, 255).toString(16).padStart(2, '0')).join('');
+const mix = (a, b, t) => { const A = hx(a), B = hx(b); return toHex(A.map((v, i) => lerp(v, B[i], t))); };
+const seeded = s => () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+const fmt = n => n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e4 ? (n / 1e3).toFixed(1) + 'k' : String(Math.floor(n));
+
+const NAMES = ['Bubbles','Mochi','Pearl','Sunny','Pebble','Coco','Bean','Waffle','Luna','Pip','Daisy','Miso','Biscuit','Tango','Kiwi','Peach','Nemo-ish','Ziggy','Boba','Noodle','Sprinkle','Chai','Gulab','Ladoo','Jalebi','Momo','Pani','Tofu','Wasabi','Comet','Marble','Fizz'];
+
+// Pixel-map palette keys: b body, l belly, f fins, s accent (these get recolored by variants);
+// d dark, w white, k eye, h highlight (fixed colors).
+const BASE = { k: '#10121c', w: '#ffffff', d: '#2b2d42', h: '#ffffffcc' };
+
+// Real fish are generated procedurally from `g` (shape, colors, fins, pattern) — see genFish().
+// Critters (snail, crab, jelly, seahorse, turtle) use hand pixel maps.
+const SPECIES = {
+  guppy: { name: 'Guppy', lvl: 1, price: 15, coin: 2, speed: 26, desc: 'Tiny, cheerful, cheap.',
+    g: { len: 11, ht: 6, tl: 9, th: 11, tail: 'fan', top: '#f08a4b', mid: '#ffa465', belly: '#ffe6c9', fin: '#4fa3ff', pat: '#ff5d8f', pattern: 'tailspots', dorsal: [.3, .6, 3] } },
+  tetra: { name: 'Neon Tetra', lvl: 1, price: 25, coin: 3, speed: 30, school: 1, desc: 'Swims in schools.',
+    g: { len: 14, ht: 5, tl: 5, th: 7, tail: 'fork', top: '#7d8f9c', mid: '#cfd9e0', belly: '#f2f5f7', fin: '#d5dee5', pat: '#2ef2ff', pat2: '#ff3d5e', pattern: 'neon', dorsal: [.42, .58, 2] } },
+  goldfish: { name: 'Goldfish', lvl: 2, price: 40, coin: 5, speed: 20, desc: 'A classic for a reason.',
+    g: { len: 15, ht: 11, tl: 11, th: 15, tail: 'veil', top: '#f06a00', mid: '#ff9020', belly: '#ffd28a', fin: '#ffb050', dorsal: [.35, .7, 4], ventral: [.45, .6, 2] } },
+  snail: { name: 'Snail', lvl: 2, price: 30, coin: 1, speed: 4, kind: 'snail', desc: 'Munches algae. Cleaner water.',
+    pal: { b: '#e9d8a6', l: '#d9c08a', f: '#e9d8a6', s: '#e76f51' },
+    map: ['....sss.....k','..ssssssss..b','.sswwsssss.bb','.swsssswsssbb','.sssswssss.bb','..sssssss.bbb','lbbbbbbbbbbbl'] },
+  clown: { name: 'Clownfish', lvl: 3, price: 70, coin: 8, speed: 22, home: 'anemone', desc: 'Loves anemones.',
+    g: { len: 17, ht: 10, tl: 5, th: 9, tail: 'round', top: '#f25c00', mid: '#ff7b1c', belly: '#ffa04d', fin: '#ff8a2e', pattern: 'bands', bands: [.13, .48, .76], dorsal: [.2, .75, 3], ventral: [.45, .6, 2] } },
+  angel: { name: 'Angelfish', lvl: 4, price: 110, coin: 12, speed: 16, desc: 'Tall, elegant, dramatic.',
+    g: { len: 13, ht: 15, tl: 6, th: 10, tail: 'fork', shape: 'disc', top: '#cfc9b8', mid: '#ebe6d8', belly: '#fffaf0', fin: '#efe0b0', pattern: 'bars', bands: [.28, .52, .74], dorsal: [.15, .65, 9], ventral: [.3, .6, 10] } },
+  crab: { name: 'Crab', lvl: 4, price: 80, coin: 4, speed: 12, kind: 'crab', desc: 'Eats leftovers off the sand.',
+    pal: { b: '#e63946', l: '#ff8fa3', f: '#c22a36', s: '#e63946' },
+    map: ['ff..w.....w..ff','ff..k.....k..ff','.f..b.....b..f.','.f.bbbbbbbbb.f.','..bbhbbbbbbbb..','..bbbbbbbbbbb..','...lllllllll...','..f.f.....f.f..','.f...f...f...f.'] },
+  betta: { name: 'Betta', lvl: 5, price: 150, coin: 16, speed: 15, desc: 'Flowing royal fins.',
+    g: { len: 14, ht: 7, tl: 12, th: 19, tail: 'veil', top: '#2e1760', mid: '#5b2a86', belly: '#8a4bb8', fin: '#c03fbf', pat: '#ff7ae0', pattern: 'betta', dorsal: [.15, .65, 7], ventral: [.25, .7, 7] } },
+  puffer: { name: 'Pufferfish', lvl: 6, price: 220, coin: 22, speed: 13, desc: 'Tap it. Trust me.',
+    g: { len: 15, ht: 13, tl: 4, th: 6, tail: 'round', shape: 'round', top: '#b8913f', mid: '#e9c46a', belly: '#fff5dc', fin: '#f4a261', pat: '#6b4f1d', pattern: 'spots', eye: 4, dorsal: [.25, .4, 2] } },
+  tang: { name: 'Blue Tang', lvl: 7, price: 300, coin: 30, speed: 24, desc: 'Just keeps swimming.',
+    g: { len: 19, ht: 12, tl: 6, th: 11, tail: 'fork', top: '#1248b8', mid: '#2272f0', belly: '#56a0f5', fin: '#ffd60a', dorsalCol: '#0d3b9e', pat: '#0b1d4d', pattern: 'tang', dorsal: [.1, .8, 3], ventral: [.2, .55, 3] } },
+  jelly: { name: 'Moon Jelly', lvl: 8, price: 380, coin: 36, speed: 8, kind: 'jelly', desc: 'Glows at night.',
+    pal: { b: '#ffb3f5', l: '#f368e0', f: '#ff9ff3', s: '#ffd6fa' },
+    map: ['...bbbbb...','.bbhhbbbbb.','bbhbbsbbbbb','bbbbsssbbbb','bbkbbbbbkbb','bbbbblbbbbb','lblblblblbl'] },
+  koi: { name: 'Koi', lvl: 9, price: 480, coin: 45, speed: 18, desc: 'Brings good luck.',
+    g: { len: 22, ht: 8, tl: 9, th: 13, tail: 'veil', top: '#f2f2f2', mid: '#ffffff', belly: '#f5efe8', fin: '#ffe8d6', pat: '#ff5a1f', pat2: '#1d1d1d', pattern: 'patch', seed: 3, dorsal: [.3, .7, 3] } },
+  horse: { name: 'Seahorse', lvl: 10, price: 600, coin: 55, speed: 7, kind: 'horse', desc: 'Hangs out by plants.',
+    pal: { b: '#ffb703', l: '#ffe08a', f: '#fb8500', s: '#ffd166' },
+    map: ['...ss.....','..bbbb....','.bbbbbb...','.bbkbbbbbb','..bbbb.bbb','..bbb.....','.fbbbs....','ffbbll....','ffbbls....','.fbbll....','..bbls....','..bbbl....','...bbb....','....bb.bb.','.....bbbb.','......bb..'] },
+  lion: { name: 'Lionfish', lvl: 12, price: 850, coin: 75, speed: 13, desc: 'Spiky, fancy, rich.',
+    g: { len: 18, ht: 11, tl: 5, th: 9, tail: 'round', top: '#9a0f18', mid: '#c1121f', belly: '#f5cdd0', fin: '#f4a261', pattern: 'lion', dorsal: [.15, .8, 9, 'spiky'], ventral: [.35, .65, 6, 'spiky'] } },
+  turtle: { name: 'Sea Turtle', visitor: 1, lvl: 99, price: 0, coin: 0, speed: 14, desc: 'A rare visitor. Tap it when it passes!',
+    pal: { b: '#90be6d', l: '#a7c957', f: '#90be6d', s: '#386641' },
+    map: ['.......ssssss.........','.....ssllssllss.......','....sllsslsllsss...bb.','...sssssssssssss..bbbb','..sllssllssllssssbbkbb','..ssssssssssssssbbbbb.','bb.ssssssssssss...bb..','.bbb..bb.....bb.......','..b....bb...bb........'] },
+};
+const FRY_MAP = ['..bb.', 'fbbkb', '..ll.'];
+
+const VARIANTS = {
+  normal:   { name: 'Classic',  chance: 0,   fn: c => c,                        filter: 'none' },
+  gold:     { name: 'Golden',   chance: .06, fn: c => mix(c, '#ffd700', .55),   filter: 'sepia(1) saturate(3)' },
+  ghost:    { name: 'Ghost',    chance: .05, fn: c => mix(c, '#eef6ff', .7),    filter: 'grayscale(.8) brightness(1.4)' },
+  midnight: { name: 'Midnight', chance: .03, fn: c => mix(c, '#3a2d9a', .6),    filter: 'hue-rotate(200deg) brightness(.8)' },
+};
+
+// ---------------- Decor ----------------
+const R = (g, x, y, w, h, c) => { g.fillStyle = c; g.fillRect(x, y, w, h); };
+const disc = (g, cx, cy, r, c) => { g.fillStyle = c; for (let y = -r; y <= r; y++) for (let x = -r; x <= r; x++) if (x * x + y * y <= r * r + r * .6) g.fillRect(cx + x, cy + y, 1, 1); };
+
+// plant: drawn live every frame (sways). Others are baked once into sprites.
+const DECOR = {
+  seaweed: { name: 'Seaweed', lvl: 1, price: 12, beauty: 2, w: 12, h: 20, plant: 1, desc: 'Sways gently.' },
+  rock: { name: 'Mossy Rock', lvl: 1, price: 20, beauty: 2, w: 18, h: 10, desc: 'Solid. Dependable.',
+    draw: g => { R(g,2,3,14,7,'#7d8597'); R(g,4,1,9,3,'#979dac'); R(g,5,1,4,1,'#c0c5d0'); R(g,1,6,16,4,'#5c677d'); R(g,3,2,3,2,'#6cbf6c'); R(g,11,7,4,1,'#6cbf6c'); R(g,13,3,2,1,'#adb5bd'); } },
+  bubbler: { name: 'Air Stone', lvl: 1, price: 35, beauty: 3, w: 8, h: 5, desc: 'Bubbles = happy fish.',
+    draw: g => { R(g,0,1,8,4,'#495057'); R(g,1,0,6,1,'#6c757d'); R(g,3,0,2,1,'#212529'); R(g,1,2,2,1,'#868e96'); } },
+  star: { name: 'Starfish', lvl: 2, price: 25, beauty: 2, w: 11, h: 7, desc: 'A little star.',
+    draw: g => { const o='#ff8a5e'; R(g,4,0,3,7,o); R(g,0,2,11,2,o); R(g,1,5,2,2,o); R(g,8,5,2,2,o); R(g,5,2,1,1,'#ffd1a8'); R(g,4,4,3,1,'#ffb38a'); } },
+  coral: { name: 'Pink Coral', lvl: 2, price: 45, beauty: 4, w: 18, h: 18, desc: 'Branchy and bright.',
+    draw: g => { const p='#ff7fa8',q='#ffb3cc'; R(g,8,8,3,10,p); R(g,3,3,2,9,p); R(g,13,4,2,8,p); R(g,4,10,5,2,p); R(g,10,10,4,2,p); R(g,6,5,2,4,p); R(g,3,1,2,2,q); R(g,13,2,2,2,q); R(g,8,6,3,2,q); R(g,6,3,2,2,q); R(g,0,6,2,4,p); R(g,0,5,2,1,q); R(g,1,9,3,2,p); } },
+  kelp: { name: 'Giant Kelp', lvl: 3, price: 40, beauty: 4, w: 14, h: 58, plant: 1, desc: 'Tall, wavy forest.' },
+  brain: { name: 'Brain Coral', lvl: 3, price: 55, beauty: 4, w: 18, h: 10, desc: 'Big thinker.',
+    draw: g => { for (let y = 0; y < 10; y++) { const hw = Math.round(9 * Math.sqrt(1 - ((9 - y) / 10) ** 2)); R(g, 9 - hw, y, hw * 2, 1, '#ffc27a'); } [3,7,11,15].forEach(x => R(g,x,2,1,7,'#e3893f')); R(g,5,1,6,1,'#ffe0b3'); } },
+  chest: { name: 'Treasure Chest', lvl: 4, price: 90, beauty: 5, w: 18, h: 16, desc: 'Opens now and then. Shiny!',
+    draw: g => { R(g,1,8,16,8,'#8b5a2b'); R(g,0,4,18,5,'#a86b32'); R(g,0,4,18,1,'#c98a4b'); R(g,0,8,18,1,'#ffd166'); R(g,8,7,2,4,'#ffd166'); R(g,3,4,1,12,'#6b4220'); R(g,14,4,1,12,'#6b4220'); },
+    draw2: g => { R(g,1,8,16,8,'#8b5a2b'); R(g,1,0,16,4,'#a86b32'); R(g,1,0,16,1,'#c98a4b'); R(g,1,4,16,2,'#3a2410'); R(g,2,6,14,3,'#ffd166'); R(g,4,5,3,1,'#fff3b0'); R(g,10,5,2,2,'#e9c46a'); R(g,0,8,18,1,'#ffd166'); R(g,3,8,1,8,'#6b4220'); R(g,14,8,1,8,'#6b4220'); } },
+  anemone: { name: 'Anemone', lvl: 5, price: 80, beauty: 5, w: 14, h: 12, plant: 1, desc: 'Clownfish heaven.' },
+  amphora: { name: 'Ancient Vase', lvl: 5, price: 70, beauty: 4, w: 12, h: 18, desc: 'From a lost city.',
+    draw: g => { const a='#c46f3d',b='#e08a52',d='#7a3b1d'; R(g,4,0,4,2,a); R(g,5,2,2,3,a); R(g,0,3,3,1,d); R(g,9,3,3,1,d); R(g,0,3,1,4,d); R(g,11,3,1,4,d); [[3,5,6],[2,6,8],[1,8,10],[1,10,10],[1,12,10],[2,14,8],[3,16,6]].forEach(([x,y,w]) => R(g,x,y,w,2,a)); R(g,2,9,8,1,d); R(g,2,12,8,1,'#f2c14e'); R(g,3,7,1,7,b); } },
+  anchor: { name: 'Old Anchor', lvl: 6, price: 100, beauty: 5, w: 14, h: 20, desc: 'Heavy history.',
+    draw: g => { const m='#6c757d',l='#adb5bd'; R(g,5,0,4,1,m); R(g,4,1,1,2,m); R(g,9,1,1,2,m); R(g,5,3,4,1,m); R(g,6,4,2,14,m); R(g,2,5,10,2,m); R(g,1,16,12,2,m); R(g,0,13,2,4,m); R(g,12,13,2,4,m); R(g,6,4,1,14,l); R(g,7,18,1,2,m); R(g,3,15,3,2,'#6cbf6c'); } },
+  helmet: { name: 'Diver Helmet', lvl: 7, price: 140, beauty: 6, w: 18, h: 18, desc: 'Someone left in a hurry.',
+    draw: g => { disc(g,9,8,8,'#c9a227'); disc(g,9,8,4,'#7a5c12'); disc(g,9,8,3,'#1b4965'); R(g,7,6,2,1,'#5fa8d3'); R(g,1,14,16,4,'#a8841e'); R(g,1,14,16,1,'#e0c35a'); [[2,8],[15,8],[9,1]].forEach(([x,y]) => R(g,x,y,1,1,'#fff3b0')); R(g,4,3,3,1,'#f0d77a'); } },
+  castle: { name: 'Sand Castle', lvl: 8, price: 200, beauty: 8, w: 30, h: 32, desc: 'Fit for a fish king.',
+    draw: g => { const a='#d8c8a8',b='#b8a684',c='#efe3c8',dk='#4a3f5c'; R(g,4,10,22,22,a); R(g,0,6,8,26,b); R(g,22,6,8,26,b); [0,3,6,22,25,28].forEach(x => R(g,x,3,2,3,b)); [10,14,18].forEach(x => R(g,x,7,2,3,a)); R(g,12,20,6,12,dk); R(g,13,19,4,1,dk); R(g,2,12,2,4,dk); R(g,26,12,2,4,dk); R(g,9,13,2,3,dk); R(g,19,13,2,3,dk); R(g,1,6,1,26,c); R(g,23,6,1,26,c); R(g,5,10,1,22,c); R(g,3,0,1,4,'#6b4f3a'); R(g,4,0,3,2,'#ef476f'); R(g,4,26,3,6,'#4f9d69'); R(g,24,24,2,8,'#4f9d69'); } },
+  crystal: { name: 'Glow Crystal', lvl: 9, price: 260, beauty: 8, w: 16, h: 18, glow: '199,125,255', desc: 'Lights up the night.',
+    draw: g => { [[1,9,'#9b5de5'],[5,16,'#c77dff'],[9,12,'#e0aaff'],[12,7,'#9b5de5']].forEach(([x,h,c]) => { R(g,x,18-h,3,h,c); R(g,x+1,17-h,1,1,c); R(g,x,18-h,1,h,'#ffffff66'); }); } },
+  ship: { name: 'Shipwreck', lvl: 11, price: 400, beauty: 12, w: 52, h: 28, desc: 'The big centerpiece.',
+    draw: g => { const w='#7a4b2a',l='#9c6438',d='#4a2c17'; R(g,4,16,44,10,w); R(g,0,13,50,3,l); R(g,2,12,8,1,l); R(g,8,26,36,2,d); for (let x = 6; x < 46; x += 6) R(g,x,17,1,9,d); [12,22,32].forEach(x => { R(g,x,19,3,3,'#1b263b'); R(g,x,19,3,1,'#c9a227'); }); R(g,24,0,3,13,d); R(g,27,2,13,9,'#e9e1c9'); R(g,31,4,3,2,w); R(g,36,8,2,3,w); R(g,27,10,13,1,'#cfc4a5'); R(g,40,22,6,4,'#6cbf6c'); R(g,4,20,3,6,'#6cbf6c'); R(g,45,14,4,2,'#adb5bd'); } },
+};
+
+// ---------------- Upgrades ----------------
+const FILTER = [0, .3, .55, .75];
+const UPGRADES = {
+  tank:   { name: 'Bigger Tank',  icon: '📦', cost: [100, 250, 600, 1200], desc: '+3 fish capacity' },
+  filter: { name: 'Water Filter', icon: '🌀', cost: [60, 180, 450],         desc: 'Water gets dirty slower' },
+  feeder: { name: 'Auto Feeder',  icon: '🥣', cost: [120, 300, 700],        desc: 'Feeds hungry fish for you' },
+  magnet: { name: 'Coin Magnet',  icon: '🧲', cost: [250],                  desc: 'Auto-collects coins' },
+  light:  { name: 'Reef Lights',  icon: '🔆', cost: [150, 400],             desc: '+15% coins per level' },
+};
+
+// ---------------- Sprite baking ----------------
+const IMG = {}, SPR = {};
+let bgDirty = true;
+function canvas(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
+
+// Soft outline: each edge pixel takes a darkened copy of its neighbour's color (selective outlining).
+function outline(c, k = .4) {
+  const g = c.getContext('2d'), w = c.width, h = c.height, d = g.getImageData(0, 0, w, h).data;
+  const out = g.createImageData(w, h), o = out.data;
+  o.set(d);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const i = (y * w + x) * 4;
+    if (d[i + 3] > 100) continue;
+    for (const [nx, ny] of [[x, y + 1], [x, y - 1], [x - 1, y], [x + 1, y]]) {
+      if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+      const j = (ny * w + nx) * 4;
+      if (d[j + 3] <= 100) continue;
+      o[i] = d[j] * k; o[i + 1] = d[j + 1] * k; o[i + 2] = d[j + 2] * k + 12; o[i + 3] = Math.max(d[j + 3], 200);
+      break;
+    }
+  }
+  g.putImageData(out, 0, 0);
+  return c;
+}
+
+function bakeMap(rows, pal, vfn = c => c) {
+  const w = Math.max(...rows.map(r => r.length)) + 2, h = rows.length + 2, c = canvas(w, h), g = c.getContext('2d');
+  rows.forEach((row, y) => [...row].forEach((ch, x) => {
+    let col = pal[ch] || BASE[ch];
+    if (!col) return;
+    if ('blfs'.includes(ch)) col = vfn(col);
+    R(g, x + 1, y + 1, 1, 1, col);
+  }));
+  return outline(c);
+}
+
+function fromImage(img, filter = 'none') {
+  const c = canvas(img.width, img.height), g = c.getContext('2d');
+  g.filter = filter; g.drawImage(img, 0, 0);
+  return c;
+}
+
+// ---- Procedural fish painter: shaded body, gloss, scales, gill, fins with rays, big cute eye + blush.
+// Returns a canvas with .tail (tail width, for the swim wave) and .eye/.lid (for blinking).
+function genFish(o, vfn = c => c) {
+  const P = k => o[k] ? hx(vfn(o[k])) : null;
+  const top = P('top'), mid = P('mid'), bel = P('belly'), fin = P('fin'), dor = P('dorsalCol') || fin, pc = P('pat'), pc2 = P('pat2');
+  const L = o.len, BH = o.ht, TL = o.tl, TH = o.th || BH;
+  const up = Math.ceil(Math.max(o.dorsal ? o.dorsal[2] : 0, (TH - BH) / 2)) + 1;
+  const dn = Math.ceil(Math.max(o.ventral ? o.ventral[2] : 0, (TH - BH) / 2)) + (o.tail === 'veil' ? 3 : 1);
+  const w = TL + L + 2, h = BH + up + dn + 2, x0 = TL + 1, cy = 1 + up + BH / 2;
+  const c = canvas(w, h), g = c.getContext('2d'), img = g.createImageData(w, h), d = img.data;
+  const lerpC = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
+  const shade = (rgb, f) => rgb.map(v => f > 0 ? v + (255 - v) * f : v * (1 + f));
+  const set = (x, y, rgb, a = 255) => { if (x < 0 || y < 0 || x >= w || y >= h) return; const i = (y * w + x) * 4; d[i] = rgb[0]; d[i + 1] = rgb[1]; d[i + 2] = rgb[2]; d[i + 3] = a; };
+  const blend = (x, y, rgb, t) => { const i = (y * w + x) * 4; if (!d[i + 3]) return; set(x, y, lerpC([d[i], d[i + 1], d[i + 2]], rgb, t), d[i + 3]); };
+  const hash = (x, y) => { const s = Math.sin(x * 127.1 + y * 311.7 + (o.seed || 1) * 17.3) * 43758.5453; return s - Math.floor(s); };
+  const prof = t => {
+    if (o.shape === 'disc' || o.shape === 'round') return Math.max(t < .5 ? .25 : 0, Math.sqrt(Math.max(0, 1 - ((t - .5) / .5) ** 2)));
+    return t < .62 ? Math.pow(Math.sin(t / .62 * Math.PI / 2), .8) * .82 + .18 : Math.pow(Math.cos((t - .62) / .38 * Math.PI / 2), .55);
+  };
+  const half = x => BH / 2 * prof((x - x0 + .5) / L);
+
+  // tail (x = 1 is the tip, x = TL touches the body)
+  for (let x = 1; x <= TL; x++) {
+    const u = (x0 - x) / TL, ccy = cy + (o.tail === 'veil' ? u * TH * .12 : 0);
+    const hs = o.tail === 'fork' ? 1 + u * TH / 2 : o.tail === 'round' ? 1 + Math.sin(u * Math.PI * .85) * TH / 2 : 1 + Math.pow(u, o.tail === 'veil' ? .6 : .7) * TH / 2;
+    for (let y = Math.floor(ccy - hs); y <= Math.ceil(ccy + hs); y++) {
+      const dy = y + .5 - ccy, ad = Math.abs(dy), r = ad / (TH / 2);
+      if (ad > hs || (o.tail === 'fork' && u > .4 && ad < (u - .4) * TH * .8)) continue;
+      if ((o.tail === 'fan' || o.tail === 'veil') && u > 1 - .35 * Math.pow(o.tail === 'veil' && dy > 0 ? r * .45 : r, 1.6)) continue; // rounded, flowing edge
+      let col = shade(fin, ((y & 1) ? -.07 : .03) + u * .12);
+      if (o.pattern === 'tailspots' && hash(x, y) > .72) col = pc;
+      if (o.pattern === 'betta' && y % 3 === 0) col = lerpC(col, pc, .5);
+      set(x, y, col, 235 - u * 60);
+    }
+  }
+  // dorsal / ventral fins
+  const finAt = (spec, isUp, col) => {
+    if (!spec) return;
+    const [t0, t1, fh, st] = spec;
+    for (let x = x0; x < x0 + L; x++) {
+      const t = (x - x0 + .5) / L;
+      if (t < t0 || t > t1) continue;
+      const s = (t - t0) / (t1 - t0);
+      if (st === 'spiky' && (x & 1)) continue; // lionfish: separate spines, no webbing
+      const f = st === 'spiky' ? fh * (.5 + .5 * Math.sin(s * Math.PI)) : fh * (s > .7 ? (1 - s) / .3 * .9 + .1 : .45 + .55 * s / .7);
+      const edge = isUp ? Math.floor(cy - half(x)) : Math.ceil(cy + half(x)) - 1;
+      for (let k = 1; k <= Math.round(f); k++) {
+        let cc = shade(col, ((x & 1) ? -.1 : .04) + (k >= Math.round(f) ? .15 : 0));
+        if (o.pattern === 'betta' && k % 3 === 0) cc = lerpC(cc, pc, .5);
+        if (st === 'spiky' && (k & 1)) cc = lerpC(cc, [255, 240, 230], .5);
+        set(x, isUp ? edge - k : edge + k, cc, 215);
+      }
+    }
+  };
+  finAt(o.dorsal, true, dor);
+  finAt(o.ventral, false, fin);
+
+  // body
+  const pattern = (col, x, y, t, v) => {
+    switch (o.pattern) {
+      case 'neon': if (v > .34 && v < .56 && t > .12 && t < .9) return lerpC(pc, [255, 255, 255], v > .4 && v < .46 ? .35 : 0); if (v >= .56 && t < .55) return pc2; return col;
+      case 'bands': for (const b of o.bands) { const dd = Math.abs(t - b); if (dd < .065) return [255, 255, 255]; if (dd < .095) return [22, 20, 28]; } return col;
+      case 'bars': for (const b of o.bands) if (Math.abs(t - b) < .045) return lerpC(col, [40, 40, 55], .85); return col;
+      case 'spots': return hash(x, y) > .8 && v < .6 ? pc : col;
+      case 'patch': { const n = Math.sin(x * .55 + o.seed) + Math.sin(y * .9 + x * .2 + o.seed * 2) + Math.sin((x - y) * .37); if (n > .9 && v < .85) return pc; if (pc2 && hash(x, y) > .95 && v < .55) return pc2; return col; }
+      case 'lion': return (x + Math.round(v * 4)) % 3 === 0 ? [255, 238, 232] : col;
+      case 'tang': { const cv = .38 + .22 * Math.sin((t - .1) * 3.3); return v > cv - .15 && v < cv + .1 && t > .1 && t < .8 ? pc : col; }
+    }
+    return col;
+  };
+  for (let x = x0; x < x0 + L; x++) {
+    const t = (x - x0 + .5) / L, hh = half(x);
+    for (let y = Math.floor(cy - hh); y < Math.ceil(cy + hh); y++) {
+      const dy = y + .5 - cy;
+      if (Math.abs(dy) > hh + .01) continue;
+      const v = (dy + hh) / (2 * hh || 1);
+      let col = pattern(v < .5 ? lerpC(top, mid, v * 2) : lerpC(mid, bel, (v - .5) * 2), x, y, t, v);
+      let f = 0;
+      if (v > .1 && v < .3 && t > .25 && t < .85) f += .18;            // glossy highlight
+      if (v > .82) f -= .1;                                           // belly shadow
+      if (Math.abs(dy) > hh - 1) f -= .16;                            // rim
+      if ((x + (y << 1)) % 4 === 0 && v < .7 && t < .7) f -= .06;      // scales
+      if (t > .69 && t < .69 + 1.2 / L && v > .2 && v < .85) f -= .14; // gill line
+      set(x, y, shade(col, f));
+    }
+  }
+  // pectoral fin (translucent, on the side)
+  for (let k = 0; k < Math.max(2, L / 5 | 0); k++) blend(x0 + Math.round(L * .62) - k, Math.round(cy + 1 + k * .6), shade(fin, .2), .55);
+  // eye, blush, mouth
+  const es = o.eye || (L >= 13 ? 3 : 2), ex = x0 + Math.round(L * .8) - (es >> 1), ey = Math.round(cy - BH * .14) - (es >> 1);
+  for (let yy = 0; yy < es; yy++) for (let xx = 0; xx < es; xx++) if (!(es === 4 && (xx % 3 === 0) && (yy % 3 === 0))) set(ex + xx, ey + yy, [16, 18, 30]);
+  set(ex, ey, [255, 255, 255]);
+  if (es === 4) { set(ex + 1, ey, [255, 255, 255]); set(ex, ey + 1, [255, 255, 255]); }
+  if (es >= 3) set(ex + es - 1, ey + es - 1, [110, 130, 170]);
+  if (es >= 3) { blend(ex - 1, ey + es + 1, [255, 120, 150], .55); blend(ex, ey + es + 1, [255, 120, 150], .45); }
+  set(x0 + L - 1, Math.round(cy + BH * .1), shade(mid, -.4));
+  g.putImageData(img, 0, 0);
+  outline(c);
+  c.tail = TL + 1;
+  c.eye = { x: ex, y: ey, s: es };
+  c.lid = toHex(shade(lerpC(top, mid, .6), -.05));
+  return c;
+}
+const fryOf = o => ({ ...o, len: Math.max(7, Math.round(o.len * .5)), ht: Math.max(4, Math.round(o.ht * .5)), tl: Math.max(3, Math.round(o.tl * .5)), th: Math.max(4, Math.round((o.th || o.ht) * .5)),
+  dorsal: o.dorsal && [o.dorsal[0], o.dorsal[1], Math.max(1, Math.round(o.dorsal[2] * .4)), o.dorsal[3]], ventral: o.ventral && [o.ventral[0], o.ventral[1], Math.max(1, Math.round(o.ventral[2] * .4)), o.ventral[3]], eye: 2 });
+
+function fishSprite(sp, v = 'normal') {
+  const k = sp + '|' + v;
+  if (SPR[k]) return SPR[k];
+  const s = SPECIES[sp], img = IMG['fish_' + sp];
+  return SPR[k] = img ? fromImage(img, VARIANTS[v].filter) : s.g ? genFish(s.g, VARIANTS[v].fn) : bakeMap(s.map, s.pal, VARIANTS[v].fn);
+}
+function frySprite(sp, v = 'normal') {
+  const k = 'fry|' + sp + '|' + v;
+  if (SPR[k]) return SPR[k];
+  const s = SPECIES[sp], img = IMG['fry_' + sp];
+  return SPR[k] = img ? fromImage(img, VARIANTS[v].filter) : s.g ? genFish(fryOf(s.g), VARIANTS[v].fn) : bakeMap(FRY_MAP, s.pal, VARIANTS[v].fn);
+}
+function decorSprite(id, alt = false) {
+  const k = 'decor|' + id + (alt ? '2' : '');
+  if (SPR[k]) return SPR[k];
+  const D = DECOR[id], img = IMG['decor_' + id + (alt ? '_open' : '')] || (!alt && IMG['decor_' + id]);
+  if (img) return SPR[k] = fromImage(img);
+  const c = canvas(D.w + 2, D.h + 2), g = c.getContext('2d');
+  g.translate(1, 1); (alt ? D.draw2 : D.draw)(g);
+  return SPR[k] = outline(c);
+}
+const COIN = bakeMap(['.yyy.', 'yywyy', 'yywyg', 'yyyyg', '.ggg.'], { y: '#ffd166', g: '#e09f00', w: '#fff8d6' });
+const PEARL = bakeMap(['.ww.', 'whww', 'wwwp', '.pp.'], { w: '#fdfcf5', h: '#ffffff', p: '#e5c3d1' });
+const HEART = bakeMap(['h.h', 'hhh', '.h.'], { h: '#ff5d8f' });
+const EGG = bakeMap(['.ee.', 'eeeh', 'eeee', '.ee.'], { e: '#fff1c1', h: '#ffffff' });
+
+// Optional real assets: load, then flush the cache so sprites re-bake from the images.
+Promise.all(Object.entries(ASSETS).map(([k, src]) => new Promise(res => {
+  const i = new Image();
+  i.onload = () => { IMG[k] = i; res(); };
+  i.onerror = () => { console.warn('Asset failed to load:', src); res(); };
+  i.src = src;
+}))).then(() => { for (const k in SPR) delete SPR[k]; bgDirty = true; });
+
+// 3x5 bitmap glyphs for crisp floating numbers
+const GLYPH = { '0':'111101101101111','1':'010110010010111','2':'111001111100111','3':'111001111001111','4':'101101111001001','5':'111100111001111','6':'111100111101111','7':'111001001001001','8':'111101111101111','9':'111101111001111','+':'000010111010000','k':'100101110101101','.':'000000000000010' };
+function drawText(str, x, y, col) {
+  x = Math.round(x - str.length * 2); y = Math.round(y);
+  for (const pass of [1, 0]) [...str].forEach((ch, i) => {
+    const gl = GLYPH[ch]; if (!gl) return;
+    ctx.fillStyle = pass ? '#141b2d' : col;
+    for (let p = 0; p < 15; p++) if (gl[p] === '1') ctx.fillRect(x + i * 4 + p % 3 + pass, y + (p / 3 | 0) + pass, 1, 1);
+  });
+}
+
+// ---------------- State ----------------
+const KEY = 'pixelreef.v1';
+const fresh = () => ({ coins: 60, xp: 0, lvl: 1, fish: null, decor: null, up: { tank: 0, filter: 0, feeder: 0, magnet: 0, light: 0 }, dirt: 0, dex: {}, sound: 1, light: 0, t: Date.now() });
+let S = fresh();
+try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && typeof s === 'object') S = Object.assign(fresh(), s, { up: Object.assign(fresh().up, s.up) }); } catch (e) {}
+
+let fish = [], decor = [], food = [], coins = [], poop = [], bubbles = [], parts = [], eggs = [], snow = [], ALGAE = [], visitor = null;
+let uid = 1, T = 0, beautyF = 0;
+const school = {};
+const grow = s => s.grow || 150;
+const cap = () => 6 + 3 * S.up.tank;
+const isFloor = s => s.kind === 'snail' || s.kind === 'crab';
+const isAdult = f => f.age >= grow(SPECIES[f.sp]);
+const vmult = f => f.v === 'normal' ? 1 : 3;
+const sellValue = f => Math.round(SPECIES[f.sp].price * (isAdult(f) ? 1.2 : .4) * vmult(f));
+
+function initFish(f) {
+  return Object.assign(f, { vx: 0, vy: 0, dir: Math.random() < .5 ? -1 : 1, tx: f.x, ty: f.y, tt: 0, ph: rnd(0, 6.28), next: rnd(5, 12), petT: 0, puff: 0, poopT: rnd(20, 40), wf: rnd(8, 12), off: [rnd(-16, 16), rnd(-9, 9)] });
+}
+function newFish(sp, v = 'normal', o = {}) {
+  const s = SPECIES[sp];
+  return initFish(Object.assign({ id: uid++, sp, v, name: pick(NAMES), x: rnd(30, W - 30), y: isFloor(s) ? rnd(SAND + 6, H - 5) : rnd(30, SAND - 20), age: grow(s) + 1, hunger: 80, mood: 70 }, o));
+}
+function clampFish(f) {
+  f.x = clamp(f.x, 8, W - 8);
+  f.y = isFloor(SPECIES[f.sp]) ? clamp(f.y, SAND + 4, H - 3) : clamp(f.y, SURF + 6, SAND - 4);
+  f.tx = f.x; f.ty = f.y;
+}
+
+function load() {
+  if (Array.isArray(S.fish)) {
+    fish = S.fish.filter(f => SPECIES[f.sp] && !SPECIES[f.sp].visitor).map(f => {
+      const o = initFish({ id: f.id | 0, sp: f.sp, v: VARIANTS[f.v] ? f.v : 'normal', name: String(f.name || pick(NAMES)).slice(0, 14), x: (f.xf || .5) * W, y: (f.yf || .5) * H, age: +f.age || 0, hunger: clamp(+f.hunger || 50, 0, 100), mood: clamp(+f.mood || 50, 0, 100) });
+      clampFish(o); return o;
+    });
+    uid = Math.max(0, ...fish.map(f => f.id)) + 1;
+    decor = (S.decor || []).filter(d => DECOR[d.id]).map(d => ({ id: d.id, x: clamp((d.xf || .5) * W, 6, W - 6), y: clamp(SAND + (d.dy || 10), SAND + 4, H - 2), ph: rnd(0, 6), tm: rnd(0, 12) }));
+    return true;
+  }
+  fish = [newFish('guppy'), newFish('guppy')];
+  decor = [['seaweed', .12, 10], ['seaweed', .17, 17], ['rock', .76, 14], ['bubbler', .88, 20]].map(([id, xf, dy]) => ({ id, x: xf * W, y: SAND + dy, ph: rnd(0, 6), tm: 0 }));
+  fish.forEach(f => dexAdd(f.sp, f.v, true));
+  return false;
+}
+function save() {
+  S.t = Date.now();
+  S.fish = fish.map(f => ({ id: f.id, sp: f.sp, v: f.v, name: f.name, xf: +(f.x / W).toFixed(3), yf: +(f.y / H).toFixed(3), age: Math.round(f.age), hunger: Math.round(f.hunger), mood: Math.round(f.mood) }));
+  S.decor = decor.map(d => ({ id: d.id, xf: +(d.x / W).toFixed(3), dy: Math.round(d.y - SAND) }));
+  try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {}
+}
+
+// Screen shape changed: move everything into the new pixel space.
+function remap(oW, oH, oS) {
+  const fx = x => x / oW * W;
+  for (const f of fish) { f.x = fx(f.x); f.y = isFloor(SPECIES[f.sp]) ? SAND + (f.y - oS) : f.y / oS * SAND; clampFish(f); }
+  for (const d of decor) { d.x = clamp(fx(d.x), 6, W - 6); d.y = clamp(SAND + (d.y - oS), SAND + 4, H - 2); }
+  for (const a of [food, coins, eggs]) for (const o of a) { o.x = fx(o.x); o.ry = clamp(SAND + (o.ry - oS), SAND + 2, H - 3); o.y = Math.min(o.y / oH * H, o.ry); }
+  for (const p of poop) { p.x = fx(p.x); p.y = clamp(SAND + (p.y - oS), SAND + 2, H - 3); }
+  for (const k in school) delete school[k];
+  bubbles.length = 0; parts.length = 0;
+}
+function makeAlgae() {
+  const r = seeded(42), out = [];
+  for (let i = 0; i < 36; i++) {
+    const cx = r() * W, cy = SURF + r() * (H - SURF - 4), px = [];
+    for (let j = 0, n = 4 + r() * 10 | 0; j < n; j++) px.push([cx + (r() - .5) * 8 | 0, cy + (r() - .5) * 6 | 0, r() < .5 ? 2 : 1]);
+    out.push({ th: 15 + r() * 80, px });
+  }
+  return out;
+}
+const makeSnow = () => Array.from({ length: Math.round(W * H / 1500) }, () => ({ x: rnd(0, W), y: rnd(SURF, SAND), v: rnd(1, 3), ph: rnd(0, 6), a: rnd(.15, .4) }));
+
+// ---------------- Progress ----------------
+function dexAdd(sp, v, quiet) {
+  const d = S.dex[sp] || (S.dex[sp] = []);
+  if (d.includes(v)) return;
+  d.push(v);
+  if (!quiet) toast('📖 New in Fishdex: ' + (v === 'normal' ? '' : VARIANTS[v].name + ' ') + SPECIES[sp].name + '!', 'pink');
+}
+const xpNeed = l => Math.round(30 * l ** 1.5);
+function gainXP(n) {
+  S.xp += n;
+  while (S.xp >= xpNeed(S.lvl)) {
+    S.xp -= xpNeed(S.lvl); S.lvl++;
+    const un = [...Object.values(SPECIES), ...Object.values(DECOR)].filter(o => o.lvl === S.lvl).map(o => o.name);
+    toast('⭐ Level ' + S.lvl + '!' + (un.length ? ' Unlocked: ' + un.join(', ') : ''), 'gold');
+    SFX.level(); confetti();
+  }
+}
+const phase = () => (Date.now() / 1000 % DAY) / DAY;
+function darkness() {
+  if (S.light === 1) return 0;
+  if (S.light === 2) return 1;
+  const p = phase();
+  return p < .55 ? 0 : p < .65 ? (p - .55) / .1 : p < .92 ? 1 : 1 - (p - .92) / .08;
+}
+
+// ---------------- Spawners ----------------
+function spark(x, y, n, col, sp = 20) { for (let i = 0; i < n; i++) parts.push({ k: 'spark', x, y, vx: rnd(-sp, sp), vy: rnd(-sp, sp * .3), life: rnd(.4, .9), col }); }
+function floatText(x, y, txt, col = '#ffd166') { parts.push({ k: 'txt', x, y, vx: 0, vy: -14, life: 1.1, txt, col }); }
+function hearts(x, y, n = 3) { for (let i = 0; i < n; i++) parts.push({ k: 'heart', x: x + rnd(-4, 4), y: y - 4, vx: rnd(-4, 4), vy: rnd(-16, -9), life: rnd(1, 1.6) }); }
+function confetti() { for (let i = 0; i < 60; i++) parts.push({ k: 'spark', x: rnd(0, W), y: rnd(-10, 10), vx: rnd(-10, 10), vy: rnd(10, 40), life: rnd(1.5, 3), col: pick(['#ffd166', '#ef476f', '#06d6a0', '#4cc9f0', '#ff8fc8']) }); }
+function bubble(x, y, big) { if (bubbles.length < 220) bubbles.push({ x, y, r: big || Math.random() < .25 ? 2 : 1, v: rnd(16, 30), ph: rnd(0, 6) }); }
+function dropFood(x, n = 2) { for (let i = 0; i < n && food.length < 40; i++) food.push({ x: clamp(x + rnd(-4, 4), 4, W - 4), y: SURF + rnd(-2, 2), ry: rnd(SAND + 2, H - 4), ph: rnd(0, 6), life: 18 }); }
+function dropCoin(f) {
+  const s = SPECIES[f.sp], pearl = Math.random() < .04;
+  coins.push({ x: f.x, y: f.y, ry: rnd(SAND + 3, H - 4), v: Math.max(1, Math.round(s.coin * vmult(f) * (pearl ? 8 : 1))), pearl, life: 25, ph: rnd(0, 6), landed: 0 });
+}
+function collect(c) {
+  coins.splice(coins.indexOf(c), 1);
+  S.coins += c.v; gainXP(c.pearl ? 5 : 1);
+  floatText(c.x, c.y - 6, '+' + c.v, c.pearl ? '#ffd1f0' : '#ffd166');
+  spark(c.x, c.y, c.pearl ? 12 : 6, c.pearl ? '#ffffff' : '#ffd166');
+  (c.pearl ? SFX.pearl : SFX.coin)();
+}
+function eat(f, p) {
+  food.splice(food.indexOf(p), 1);
+  f.hunger = Math.min(100, f.hunger + 30);
+  gainXP(1); SFX.chomp(); spark(p.x, p.y, 3, '#fff8d6', 8);
+}
+
+// ---------------- Fish brains ----------------
+function updateFish(f, dt, dk) {
+  const s = SPECIES[f.sp], adult = isAdult(f), sleepy = dk > .6, floor = isFloor(s);
+  f.age += dt;
+  f.hunger = s.kind === 'snail' ? clamp(f.hunger + dt * (S.dirt > 5 ? .5 : -.1), 0, 100) : Math.max(0, f.hunger - dt * (sleepy ? .15 : .3));
+  const crowd = fish.length > cap() ? .15 : 0;
+  const home = s.home && decor.some(d => d.id === s.home && Math.abs(d.x - f.x) < 30) ? .15 : 0;
+  const want = clamp((f.hunger > 40 ? 1 : f.hunger / 40) * .55 + (1 - S.dirt / 100) * .3 + beautyF * .15 + home - crowd, 0, 1) * 100;
+  f.mood += (want - f.mood) * Math.min(1, dt * .08);
+  if (f.petT > 0) f.petT -= dt;
+  if (f.puff > 0) f.puff -= dt;
+
+  if (adult && f.hunger > 15) {
+    f.next -= dt * (f.mood > 50 ? 1 : .4) * (sleepy ? .5 : 1) * (1 + .15 * S.up.light) * (floor ? .4 : 1);
+    if (f.next <= 0) { f.next = rnd(10, 16); dropCoin(f); }
+  }
+  f.poopT -= dt;
+  if (f.poopT <= 0) { f.poopT = rnd(25, 45); if (f.hunger > 30 && !floor) parts.push({ k: 'poop', x: f.x - f.dir * 4, y: f.y + 1, vx: 0, vy: 7, life: 40 }); }
+  if (sleepy && !floor && Math.random() < dt * .25) parts.push({ k: 'z', x: f.x + f.dir * 3, y: f.y - 5, vx: 2, vy: -5, life: 1.6 });
+
+  if (floor) return floorMove(f, s, dt);
+
+  let sp = s.speed * (sleepy ? .35 : 1), tgt = null;
+  if (f.hunger < 92 && food.length) {
+    let bd = 1e9;
+    for (const p of food) { const d = (p.x - f.x) ** 2 + (p.y - f.y) ** 2; if (d < bd) { bd = d; tgt = p; } }
+    if (bd > 120 * 120 && f.hunger > 60) tgt = null; // not hungry enough to cross the tank
+  }
+  if (tgt) {
+    f.tx = tgt.x; f.ty = tgt.y; sp *= 1.8;
+    if (Math.abs(tgt.x - f.x) < 4 && Math.abs(tgt.y - f.y) < 4) eat(f, tgt);
+  } else {
+    f.tt -= dt;
+    if (s.school && !sleepy && school[f.sp]) { const sc = school[f.sp]; f.tx = sc.x + f.off[0]; f.ty = sc.y + f.off[1]; }
+    else if (f.tt <= 0 || Math.hypot(f.tx - f.x, f.ty - f.y) < 5) newTarget(f, s, sleepy);
+  }
+  if (s.kind === 'jelly') sp *= .25 + Math.max(0, Math.sin(T * 2.2 + f.ph)) * 1.6;
+  const dx = f.tx - f.x, dy = f.ty - f.y, dist = Math.hypot(dx, dy) || 1, slow = Math.min(1, dist / 18), k = Math.min(1, dt * 2.2);
+  f.vx += (dx / dist * sp * slow - f.vx) * k;
+  f.vy += (dy / dist * sp * slow * (s.kind ? 1 : .6) - f.vy) * k;
+  f.x = clamp(f.x + f.vx * dt, 8, W - 8);
+  f.y = clamp(f.y + f.vy * dt, SURF + 6, tgt ? H - 5 : SAND - 4);
+  if (f.vx > 2.5) f.dir = 1; else if (f.vx < -2.5) f.dir = -1;
+}
+function newTarget(f, s, sleepy) {
+  f.tt = rnd(3, 8);
+  if (s.kind === 'horse') {
+    const pl = decor.filter(d => DECOR[d.id].plant);
+    if (pl.length && Math.random() < .7) { const p = pick(pl); f.tx = clamp(p.x + rnd(-8, 8), 8, W - 8); f.ty = clamp(p.y - rnd(6, DECOR[p.id].h), SURF + 8, SAND - 4); return; }
+  }
+  f.tx = rnd(12, W - 12);
+  f.ty = sleepy ? rnd(SAND - 36, SAND - 6) : rnd(SURF + 10, SAND - 8);
+}
+function floorMove(f, s, dt) {
+  f.tt -= dt;
+  let tgt = null;
+  if (s.kind === 'crab') { for (const p of food) if (p.y >= p.ry && Math.abs(p.x - f.x) < 70) { tgt = p; break; } }
+  else for (const p of poop) if (Math.abs(p.x - f.x) < 50) { tgt = p; break; }
+  if (tgt) { f.tx = tgt.x; f.ty = tgt.y; }
+  else if (f.tt <= 0) { f.tt = rnd(2, 7); f.tx = rnd(10, W - 10); f.ty = rnd(SAND + 5, H - 4); }
+  const dx = f.tx - f.x, dy = f.ty - f.y, d = Math.hypot(dx, dy), sp = s.speed * (s.kind === 'crab' && tgt ? 2.5 : 1);
+  f.moving = d > 1.5;
+  if (f.moving) { f.x += dx / d * sp * dt; f.y += dy / d * sp * .6 * dt; if (Math.abs(dx) > 1) f.dir = dx > 0 ? 1 : -1; }
+  f.y = clamp(f.y, SAND + 4, H - 3);
+  S.dirt = Math.max(0, S.dirt - dt * (s.kind === 'snail' ? .03 : .012));
+  for (let i = poop.length - 1; i >= 0; i--) if (Math.abs(poop[i].x - f.x) < 5 && Math.abs(poop[i].y - f.y) < 4) poop.splice(i, 1);
+  if (s.kind === 'crab') for (const p of food) if (p.y >= p.ry && Math.abs(p.x - f.x) < 5 && Math.abs(p.y - f.y) < 5) { eat(f, p); break; }
+}
+
+// ---------------- Breeding & visitors ----------------
+function tryBreed() {
+  if (fish.length + eggs.length >= cap()) return;
+  const by = {};
+  for (const f of fish) if (isAdult(f) && f.mood > 70 && f.hunger > 50) (by[f.sp] = by[f.sp] || []).push(f);
+  for (const sp in by) if (by[sp].length >= 2 && Math.random() < .3) {
+    const [a, b] = by[sp].sort(() => Math.random() - .5);
+    hearts(a.x, a.y); hearts(b.x, b.y);
+    eggs.push({ sp, v: rollVariant(a, b), x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, ry: rnd(SAND + 3, H - 5), t: 22 });
+    toast('💕 ' + a.name + ' & ' + b.name + ' laid an egg!', 'pink'); SFX.pet(); gainXP(15);
+    return;
+  }
+}
+function rollVariant(a, b) {
+  if (a.v === b.v && a.v !== 'normal' && Math.random() < .5) return a.v;
+  let r = Math.random();
+  for (const k in VARIANTS) { r -= VARIANTS[k].chance; if (r < 0 && k !== 'normal') return k; }
+  return 'normal';
+}
+function hatch(e) {
+  const f = newFish(e.sp, e.v, { x: e.x, y: isFloor(SPECIES[e.sp]) ? e.ry : SAND - 10, age: 0, hunger: 70 });
+  fish.push(f); dexAdd(e.sp, e.v);
+  spark(e.x, e.ry, 10, '#fff1c1');
+  const rare = e.v !== 'normal';
+  toast((rare ? '✨ A ' + VARIANTS[e.v].name + ' ' : '🐣 A baby ') + SPECIES[e.sp].name + ' hatched! Say hi to ' + f.name, rare ? 'gold' : '');
+  rare ? SFX.pearl() : SFX.buy();
+}
+function spawnVisitor() {
+  const dir = Math.random() < .5 ? 1 : -1;
+  visitor = { x: dir > 0 ? -24 : W + 24, y: rnd(SURF + 24, SAND - 30), dir, ph: 0, tapped: 0 };
+  toast('🐢 A sea turtle is passing by. Tap it!', 'gold');
+}
+function tapVisitor() {
+  const v = visitor; v.tapped = 1;
+  const amt = 20 + S.lvl * 10;
+  S.coins += amt; gainXP(15); dexAdd('turtle', 'normal');
+  floatText(v.x, v.y - 10, '+' + amt); hearts(v.x, v.y, 5); spark(v.x, v.y, 16, '#ffd166');
+  SFX.pearl(); toast('🐢 The turtle left you a gift: ' + amt + ' coins!', 'gold');
+}
+
+// ---------------- World tick ----------------
+const timers = { breed: 15, feeder: 10, visitor: rnd(150, 300), save: 5 };
+function update(dt) {
+  T += dt;
+  const dk = darkness();
+  beautyF = Math.min(1, decor.reduce((a, d) => a + DECOR[d.id].beauty, 0) / 40);
+  for (const sp in SPECIES) if (SPECIES[sp].school) {
+    const sc = school[sp] || (school[sp] = { x: W / 2, y: SAND / 2, tx: W / 2, ty: SAND / 2, t: 0 });
+    if ((sc.t -= dt) <= 0) { sc.t = rnd(3, 7); sc.tx = rnd(30, W - 30); sc.ty = rnd(SURF + 20, SAND - 20); }
+    sc.x += (sc.tx - sc.x) * dt * .5; sc.y += (sc.ty - sc.y) * dt * .5;
+  }
+  for (const f of fish) updateFish(f, dt, dk);
+  for (let i = food.length - 1; i >= 0; i--) {
+    const p = food[i];
+    if (p.y < p.ry) { p.y = Math.min(p.ry, p.y + 9 * dt); p.x += Math.sin(T * 3 + p.ph) * .15; }
+    else if ((p.life -= dt) <= 0) { food.splice(i, 1); S.dirt += 1.2; }
+  }
+  for (let i = coins.length - 1; i >= 0; i--) {
+    const c = coins[i];
+    if (c.y < c.ry) { c.y = Math.min(c.ry, c.y + 16 * dt); c.x += Math.sin(T * 2 + c.ph) * .2; }
+    else { c.landed += dt; if (S.up.magnet && c.landed > .6) { collect(c); continue; } if ((c.life -= dt) <= 0) coins.splice(i, 1); }
+  }
+  for (let i = eggs.length - 1; i >= 0; i--) {
+    const e = eggs[i];
+    if (e.y < e.ry) e.y = Math.min(e.ry, e.y + 10 * dt); else if ((e.t -= dt) <= 0) { eggs.splice(i, 1); hatch(e); }
+  }
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const p = parts[i];
+    p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt;
+    if (p.k === 'poop' && p.y >= SAND + 2) { parts.splice(i, 1); if (poop.length < 50) poop.push({ x: p.x, y: rnd(SAND + 2, H - 4) }); S.dirt += .8; continue; }
+    if (p.k === 'spark') p.vy += 30 * dt;
+    if (p.life <= 0) parts.splice(i, 1);
+  }
+  for (let i = bubbles.length - 1; i >= 0; i--) { const b = bubbles[i]; b.y -= b.v * dt; b.x += Math.sin(T * 3 + b.ph) * .25; if (b.y < SURF) bubbles.splice(i, 1); }
+  for (const s of snow) { s.y += s.v * dt; s.x += Math.sin(T * .5 + s.ph) * .05; if (s.y > SAND) { s.y = SURF; s.x = rnd(0, W); } }
+  for (const d of decor) {
+    d.tm += dt;
+    if (d.id === 'bubbler' && Math.random() < dt * 9) bubble(d.x + rnd(-1, 1), d.y - 5);
+    if (d.id === 'helmet' && Math.random() < dt * .6) bubble(d.x + 3, d.y - 17);
+    if (d.id === 'chest') {
+      const was = d.open; d.open = d.tm % 14 > 12;
+      if (d.open && !was) { for (let i = 0; i < 8; i++) bubble(d.x + rnd(-6, 6), d.y - 10, 1); if (Math.random() < .35) coins.push({ x: d.x, y: d.y - 12, ry: d.y + 1, v: 2 + S.lvl, pearl: 0, life: 20, ph: 0, landed: 0 }); }
+    }
+  }
+  if (Math.random() < dt * .8) bubble(rnd(0, W), SAND + 2);
+  S.dirt = clamp(S.dirt + dt * .045 * (1 - FILTER[S.up.filter]) * (1 + fish.length / 10), 0, 100);
+  if ((timers.breed -= dt) <= 0) { timers.breed = 15; tryBreed(); }
+  if (S.up.feeder && (timers.feeder -= dt) <= 0) {
+    timers.feeder = 45 - S.up.feeder * 10;
+    const swim = fish.filter(f => !isFloor(SPECIES[f.sp]));
+    if (swim.length && swim.reduce((a, f) => a + f.hunger, 0) / swim.length < 55) { for (let i = 0; i < 3 + S.up.feeder * 2; i++) dropFood(rnd(16, W - 16), 1); SFX.plop(); }
+  }
+  if (!visitor && (timers.visitor -= dt) <= 0) { timers.visitor = rnd(240, 420); spawnVisitor(); }
+  if (visitor) { visitor.ph += dt; visitor.x += visitor.dir * (visitor.tapped ? 34 : 12) * dt; if (visitor.x < -30 || visitor.x > W + 30) visitor = null; }
+  if ((timers.save -= dt) <= 0) { timers.save = 5; save(); }
+}
+
+function offline(sec) {
+  if (sec < 60) return;
+  sec = Math.min(sec, 8 * 3600);
+  let earn = 0;
+  for (const f of fish) {
+    const s = SPECIES[f.sp];
+    f.age += sec;
+    if (isAdult(f)) earn += s.coin * vmult(f) / 13 * sec * .25;
+    f.hunger = Math.max(15, f.hunger - sec * .08);
+  }
+  earn = Math.floor(earn);
+  S.dirt = Math.min(100, S.dirt + sec * .02 * (1 - FILTER[S.up.filter]));
+  S.coins += earn;
+  const h = sec / 3600 | 0, m = (sec % 3600) / 60 | 0;
+  $('welcomeTxt').innerHTML = `You were away for <b>${h ? h + 'h ' : ''}${m}m</b>.<br>Your fish made <b style="color:var(--gold)">🪙 ${fmt(earn)}</b> while you were gone!` +
+    (S.dirt > 50 ? '<br><br>The water got a bit murky. Give it a clean 🧽' : '') + (fish.some(f => f.hunger < 30) ? '<br>Some fish look hungry 🍤' : '');
+  openModal('welcome');
+}
+
+// ---------------- Rendering ----------------
+const bg = canvas(1, 1);
+function bakeBG() {
+  bgDirty = false;
+  bg.width = W; bg.height = H;
+  const g = bg.getContext('2d');
+  if (IMG.bg) { g.imageSmoothingEnabled = false; g.drawImage(IMG.bg, 0, 0, W, H); return; }
+  for (let y = 0; y < H; y++) { const k = Math.min(1, y / SAND); R(g, 0, y, W, 1, toHex([lerp(92, 10, k), lerp(200, 58, k), lerp(232, 118, k)])); }
+  const r = seeded(7);
+  [['#155e8c', 34, .021, 10], ['#0f4c78', 20, .043, 6]].forEach(([col, base, fq, amp]) => {
+    const ph = r() * 6;
+    for (let x = 0; x < W; x++) { const h = Math.round(base + Math.sin(x * fq + ph) * amp + Math.sin(x * fq * 2.7 + ph * 2) * amp * .4); R(g, x, SAND - h, 1, h + 2, col); }
+  });
+  for (let i = 0; i < W / 22; i++) { const x = r() * W | 0, h = 20 + r() * 50 | 0; for (let j = 0; j < h; j++) R(g, x + Math.round(Math.sin(j * .12 + i) * 2), SAND - j, 2, 1, '#13577f'); }
+  const sandCols = Array.from({ length: H - SAND + 4 }, (_, i) => mix('#f2d49b', '#c99c5f', clamp(i / (H - SAND), 0, 1)));
+  for (let x = 0; x < W; x++) {
+    const top = SAND + Math.round(Math.sin(x * .05) * 1.5 + Math.sin(x * .13 + 1));
+    for (let y = top; y < H; y++) { const n = r(); R(g, x, y, 1, 1, n < .06 ? '#b38b52' : n < .1 ? '#fff0c9' : sandCols[Math.max(0, y - SAND)]); }
+    R(g, x, top, 1, 1, '#fff3d0');
+  }
+  for (let i = 0; i < W / 6; i++) { const x = r() * W | 0, y = SAND + 3 + r() * (H - SAND - 5) | 0; R(g, x, y, 2, 1, ['#9c8f80', '#c4b5a5', '#e8a598', '#8fb6c9'][i % 4]); R(g, x, y + 1, 2, 1, '#00000022'); }
+}
+
+const PLANTS = {
+  seaweed(g, x, y, t) { for (let k = 0; k < 4; k++) { const bx = x - 5 + k * 3, h = 12 + (k * 7 + 3) % 5 * 2; for (let i = 0; i < h; i++) { const o = Math.sin(t * 1.6 + k + i * .18) * i / h * 2.5; R(g, Math.round(bx + o), y - i, 2, 1, (i + k) % 4 < 2 ? '#3fa34d' : '#5cc95f'); } } },
+  kelp(g, x, y, t) { for (let k = 0; k < 2; k++) { const bx = x - 3 + k * 5, h = k ? 44 : 56; for (let i = 0; i < h; i++) { const o = Math.sin(t * .9 + k * 1.3 + i * .08) * i / h * 5, xx = Math.round(bx + o); R(g, xx, y - i, 2, 1, '#4b7f2a'); if (i % 7 === 3) R(g, xx + 2, y - i - 1, 3, 2, '#7cb342'); if (i % 7 === 0 && i > 4) R(g, xx - 3, y - i - 1, 3, 2, '#689f38'); } } },
+  anemone(g, x, y, t) { R(g, x - 6, y - 3, 13, 3, '#8e3b6e'); R(g, x - 5, y - 1, 11, 1, '#6b2a52'); for (let k = -5; k <= 5; k++) { const h = 7 + (k * k) % 4; for (let i = 0; i < h; i++) { const o = Math.sin(t * 2 + k * .5 + i * .3) * i / h * 2; R(g, Math.round(x + k + o), y - 3 - i, 1, 1, i > h - 3 ? '#ffd1f0' : (k & 1 ? '#ff6ec7' : '#e056a8')); } } },
+};
+function drawDecor(g, d, t) {
+  const D = DECOR[d.id];
+  if (D.plant && !IMG['decor_' + d.id]) return PLANTS[d.id](g, Math.round(d.x), Math.round(d.y), t + (d.ph || 0));
+  const s = decorSprite(d.id, d.id === 'chest' && d.open);
+  g.drawImage(s, Math.round(d.x - s.width / 2), Math.round(d.y - s.height + 1));
+}
+const spriteFor = f => isAdult(f) || isFloor(SPECIES[f.sp]) ? fishSprite(f.sp, f.v) : frySprite(f.sp, f.v);
+
+function drawFish(f) {
+  const s = SPECIES[f.sp], img = spriteFor(f), w = img.width, h = img.height;
+  const x = Math.round(f.x), y = Math.round(f.y + Math.sin(T * (s.kind === 'horse' ? 2 : 3) + f.ph) * (s.kind === 'horse' ? 1.5 : .7));
+  ctx.save(); ctx.translate(x, y);
+  if (s.kind === 'jelly') {
+    const up = Math.sin(T * 2.2 + f.ph) > .5 ? 1 : 0;
+    ctx.globalAlpha = .88;
+    for (let i = 0; i < 4; i++) for (let j = 0; j < 8; j++) R(ctx, Math.round(-3 + i * 2 + Math.sin(T * 3 + j * .6 + i) * 1.2), Math.round(h / 2 - 1 + j), 1, 1, j % 2 ? 'rgba(255,200,245,.75)' : 'rgba(255,159,243,.55)');
+    ctx.drawImage(img, -w / 2 | 0, (-h / 2 | 0) - up, w, h + up);
+  } else {
+    if (f.dir < 0) ctx.scale(-1, 1);
+    if (f.puff > 0) ctx.scale(2, 2);
+    const moving = Math.abs(f.vx) + Math.abs(f.vy) > 3, ox = -w / 2 | 0, oy = -h / 2 | 0;
+    if (s.kind === 'horse') ctx.drawImage(img, ox, oy);
+    else {
+      // swim wave: each tail column bobs, strongest at the tip
+      const tl = img.tail || Math.floor(w * .38), amp = moving ? 1.7 : .9, ph = T * f.wf * (moving ? 1.3 : .55) + f.ph;
+      for (let cx = 0; cx < tl; cx++) ctx.drawImage(img, cx, 0, 1, h, ox + cx, oy + Math.round(Math.sin(ph - cx * .3) * amp * (1 - cx / tl)), 1, h);
+      ctx.drawImage(img, tl, 0, w - tl, h, ox + tl, oy, w - tl, h);
+      // blink now and then; eyes closed while sleeping
+      const e = img.eye;
+      if (e && (darkness() > .6 || (T + f.ph * 7) % 4.5 < .14)) {
+        ctx.fillStyle = img.lid; ctx.fillRect(ox + e.x, oy + e.y, e.s, e.s);
+        ctx.fillStyle = '#10121e'; ctx.fillRect(ox + e.x, oy + e.y + (e.s >> 1), e.s, 1);
+      }
+    }
+  }
+  ctx.restore();
+  if (f.hunger < 25 && Math.sin(T * 4 + f.ph) > .2) { const by = y - (h >> 1) - 7; R(ctx, x - 2, by, 5, 4, '#ffffff'); R(ctx, x - 1, by + 1, 3, 2, '#c8553d'); R(ctx, x, by + 4, 1, 1, '#ffffff'); }
+}
+function drawCritter(f) {
+  const img = spriteFor(f), w = img.width, h = img.height, bob = f.moving && SPECIES[f.sp].kind === 'crab' && Math.sin(T * 18) > 0 ? 1 : 0;
+  ctx.save(); ctx.translate(Math.round(f.x), Math.round(f.y - h / 2) - bob);
+  if (f.dir < 0) ctx.scale(-1, 1);
+  ctx.drawImage(img, -w / 2 | 0, -h / 2 | 0);
+  ctx.restore();
+}
+function drawCoin(c) {
+  ctx.globalAlpha = c.y >= c.ry && c.life < 4 && Math.sin(T * 20) < 0 ? .3 : 1;
+  if (c.pearl) ctx.drawImage(PEARL, Math.round(c.x - 3), Math.round(c.y - 3));
+  else { const w = Math.max(1, Math.round(COIN.width * Math.abs(Math.cos(T * 4 + c.ph)))); ctx.drawImage(COIN, Math.round(c.x - w / 2), Math.round(c.y - 3), w, COIN.height); }
+  ctx.globalAlpha = 1;
+}
+function drawVisitor() {
+  const v = visitor, img = fishSprite('turtle'), w = img.width, h = img.height;
+  ctx.save(); ctx.translate(Math.round(v.x), Math.round(v.y + Math.sin(v.ph * 1.5) * 2));
+  if (v.dir < 0) ctx.scale(-1, 1);
+  const fl = Math.sin(v.ph * 4) > 0 ? 1 : 0;
+  ctx.drawImage(img, 0, 0, w, h - 3, -w / 2 | 0, -h / 2 | 0, w, h - 3);
+  ctx.drawImage(img, 0, h - 3, w, 3, (-w / 2 | 0) + fl, (-h / 2 | 0) + h - 3, w, 3);  // flippers paddle
+  ctx.restore();
+  if (!v.tapped && Math.sin(T * 5) > 0) drawText('+', v.x, v.y - h / 2 - 8, '#ffd166');
+}
+function drawPart(p) {
+  ctx.globalAlpha = clamp(p.life * 2, 0, 1);
+  if (p.k === 'spark') R(ctx, p.x | 0, p.y | 0, 1, 1, p.col);
+  else if (p.k === 'heart') ctx.drawImage(HEART, Math.round(p.x - 2), Math.round(p.y - 2));
+  else if (p.k === 'txt') drawText(p.txt, p.x, p.y, p.col);
+  else if (p.k === 'z') { const x = p.x | 0, y = p.y | 0; ctx.fillStyle = '#e0e7ff'; ctx.fillRect(x, y, 3, 1); ctx.fillRect(x + 1, y + 1, 1, 1); ctx.fillRect(x, y + 2, 3, 1); }
+  else if (p.k === 'poop') R(ctx, p.x | 0, p.y | 0, 1, 2, '#6b5634');
+  else if (p.k === 'ring') { const r = Math.round((1 - p.life) * 8); ctx.fillStyle = 'rgba(255,255,255,.6)'; ctx.fillRect(Math.round(p.x - r), Math.round(p.y), r * 2 + 1, 1); }
+  ctx.globalAlpha = 1;
+}
+function glow(x, y, r, rgb, a) {
+  const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+  g.addColorStop(0, `rgba(${rgb},${a})`); g.addColorStop(1, `rgba(${rgb},0)`);
+  ctx.fillStyle = g; ctx.fillRect(x - r, y - r, r * 2, r * 2);
+}
+function bracket(d, a) {
+  const D = DECOR[d.id], w = D.w + 4, h = D.h + 4, x = Math.round(d.x - w / 2), y = Math.round(d.y - h + 2), c = Math.sin(T * 8) > 0 ? '#ffd166' : '#ffffff';
+  ctx.globalAlpha = a;
+  for (const [i, j] of [[0, 0], [w - 3, 0], [0, h - 1], [w - 3, h - 1]]) R(ctx, x + i, y + j, 3, 1, c);
+  for (const [i, j] of [[0, 0], [w - 1, 0], [0, h - 3], [w - 1, h - 3]]) R(ctx, x + i, y + j, 1, 3, c);
+  ctx.globalAlpha = 1;
+}
+
+function render() {
+  if (bgDirty) bakeBG();
+  const dk = darkness(), day = 1 - dk;
+  ctx.drawImage(bg, 0, 0);
+  if (day > .05) {
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < Math.ceil(W / 64); i++) {
+      const x0 = 20 + i * 64 + Math.sin(T * .2 + i) * 14;
+      ctx.fillStyle = `rgba(255,250,220,${(.035 + .025 * Math.sin(T * .7 + i * 1.7)) * day})`;
+      ctx.beginPath(); ctx.moveTo(x0, 0); ctx.lineTo(x0 + 14, 0); ctx.lineTo(x0 + 50, SAND); ctx.lineTo(x0 + 18, SAND); ctx.fill();
+    }
+    ctx.fillStyle = `rgba(255,255,230,${.22 * day})`;
+    for (let y = SAND + 1; y < H; y += 2) for (let x = 0; x < W; x += 2) {
+      if (Math.sin(x * .11 + T * 1.1 + y * .3) + Math.sin(x * .067 - T * .8 - y * .21) + Math.sin((x + y) * .05 + T * .5) > 1.7) ctx.fillRect(x, y, 2, 1);
+    }
+    ctx.globalCompositeOperation = 'source-over';
+  }
+  for (const s of snow) { ctx.fillStyle = `rgba(255,255,255,${s.a})`; ctx.fillRect(s.x | 0, s.y | 0, 1, 1); }
+  ctx.fillStyle = '#5b4a2f'; for (const p of poop) ctx.fillRect(p.x | 0, p.y | 0, 1, 1);
+  for (const d of decor.slice().sort((a, b) => a.y - b.y)) drawDecor(ctx, d, T);
+  for (const p of food) { R(ctx, p.x | 0, p.y | 0, 2, 2, '#c8553d'); R(ctx, p.x | 0, p.y | 0, 1, 1, '#f4a259'); }
+  for (const e of eggs) ctx.drawImage(EGG, Math.round(e.x - 3 + (e.t < 5 && e.y >= e.ry ? Math.sin(T * 25) : 0)), Math.round(e.y - 5));
+  for (const f of fish.filter(f => isFloor(SPECIES[f.sp])).sort((a, b) => a.y - b.y)) drawCritter(f);
+  for (const c of coins) drawCoin(c);
+  for (const f of fish) if (!isFloor(SPECIES[f.sp])) drawFish(f);
+  if (visitor) drawVisitor();
+  for (const b of bubbles) {
+    const x = b.x | 0, y = b.y | 0;
+    if (b.r === 1) R(ctx, x, y, 1, 1, 'rgba(220,250,255,.75)');
+    else { ctx.fillStyle = 'rgba(220,250,255,.55)'; ctx.fillRect(x, y - 1, 2, 1); ctx.fillRect(x - 1, y, 1, 2); ctx.fillRect(x + 2, y, 1, 2); ctx.fillRect(x, y + 2, 2, 1); R(ctx, x, y, 1, 1, '#ffffff'); }
+  }
+  for (const p of parts) drawPart(p);
+  // water surface
+  const sy = [];
+  for (let x = 0; x < W; x++) sy.push(SURF + Math.round(Math.sin(x * .09 + T * 1.8) * 1.2 + Math.sin(x * .21 - T * 1.1) * .6));
+  ctx.fillStyle = 'rgba(255,255,255,.10)'; for (let x = 0; x < W; x++) ctx.fillRect(x, 0, 1, sy[x]);
+  ctx.fillStyle = 'rgba(225,250,255,.6)'; for (let x = 0; x < W; x++) ctx.fillRect(x, sy[x], 1, 1);
+  // murky water + algae on the glass
+  if (S.dirt > 1) {
+    ctx.fillStyle = `rgba(80,110,30,${S.dirt / 100 * .3})`; ctx.fillRect(0, 0, W, H);
+    for (const a of ALGAE) if (S.dirt > a.th) { ctx.fillStyle = `rgba(70,140,50,${Math.min(.75, (S.dirt - a.th) / 25)})`; for (const [x, y, s] of a.px) ctx.fillRect(x, y, s, s); }
+  }
+  // night
+  if (dk > 0) {
+    ctx.fillStyle = `rgba(6,10,40,${dk * .55})`; ctx.fillRect(0, 0, W, H);
+    ctx.globalCompositeOperation = 'lighter';
+    for (const d of decor) if (DECOR[d.id].glow) glow(d.x, d.y - DECOR[d.id].h / 2, 28, DECOR[d.id].glow, .35 * dk * (.8 + .2 * Math.sin(T * 2)));
+    for (const f of fish) if (SPECIES[f.sp].kind === 'jelly') glow(f.x, f.y, 16, '255,159,243', .3 * dk);
+    ctx.fillStyle = `rgba(160,180,255,${.05 * dk})`;
+    ctx.beginPath(); ctx.moveTo(W * .6, 0); ctx.lineTo(W * .6 + 30, 0); ctx.lineTo(W * .6 + 70, SAND); ctx.lineTo(W * .6 + 20, SAND); ctx.fill();
+    ctx.globalCompositeOperation = 'source-over';
+  }
+  // glass shine
+  ctx.fillStyle = 'rgba(255,255,255,.035)';
+  ctx.beginPath(); ctx.moveTo(W * .08, 0); ctx.lineTo(W * .16, 0); ctx.lineTo(W * .04, H); ctx.lineTo(0, H); ctx.lineTo(0, H * .6); ctx.fill();
+  // overlays
+  if (S.up.feeder) { R(ctx, 10, 0, 14, 5, '#495057'); R(ctx, 12, 5, 10, 1, '#212529'); R(ctx, 12, 1, 10, 2, '#ffd166'); }
+  if (sel && fish.includes(sel)) { const x = Math.round(sel.x), y = Math.round(sel.y - spriteFor(sel).height / 2 - 4 + Math.sin(T * 6)); R(ctx, x - 3, y - 4, 7, 1, '#141b2d'); R(ctx, x - 2, y - 3, 5, 1, '#ffd166'); R(ctx, x - 1, y - 2, 3, 1, '#ffd166'); R(ctx, x, y - 1, 1, 1, '#ffd166'); }
+  if (mode === 'edit') for (const d of decor) bracket(d, d === selDecor ? 1 : .35);
+  if (placing && pointer.x > -50) { ctx.globalAlpha = .65; drawDecor(ctx, { id: placing, x: clamp(pointer.x, 6, W - 6), y: clamp(pointer.y, SAND + 4, H - 2), ph: 0 }, T); ctx.globalAlpha = 1; }
+}
+
+// ---------------- Audio (all synthesized, no files) ----------------
+let AC = null, master = null, musicBus = null;
+function audio() {
+  try {
+    if (!AC) {
+      AC = new (window.AudioContext || window.webkitAudioContext)();
+      master = AC.createGain(); master.gain.value = S.sound ? .5 : 0; master.connect(AC.destination);
+      startMusic();
+    }
+    if (AC.state === 'suspended') AC.resume();
+  } catch (e) {}
+}
+function tone(f, d = .12, type = 'sine', v = .15, when = 0, slide = 0, bus) {
+  if (!AC || !S.sound) return;
+  const t = AC.currentTime + when, o = AC.createOscillator(), g = AC.createGain();
+  o.type = type; o.frequency.setValueAtTime(f, t);
+  if (slide) o.frequency.exponentialRampToValueAtTime(f * slide, t + d);
+  g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(v, t + .01); g.gain.exponentialRampToValueAtTime(.0001, t + d);
+  o.connect(g); g.connect(bus || master); o.start(t); o.stop(t + d + .05);
+}
+const SFX = {
+  coin: () => { tone(988, .07, 'square', .05); tone(1319, .14, 'square', .05, .06); },
+  pearl: () => [1047, 1319, 1568, 2093].forEach((f, i) => tone(f, .25, 'triangle', .08, i * .06)),
+  plop: () => tone(520, .12, 'sine', .12, 0, .45),
+  chomp: () => tone(300, .05, 'square', .04, 0, .6),
+  buy: () => [523, 659, 784].forEach((f, i) => tone(f, .16, 'triangle', .1, i * .07)),
+  level: () => [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, .22, 'square', .06, i * .09)),
+  pet: () => tone(660, .18, 'triangle', .1, 0, 1.5),
+  puff: () => tone(180, .3, 'sawtooth', .06, 0, 2.5),
+  clean: () => { for (let i = 0; i < 10; i++) tone(rnd(400, 1300), .1, 'sine', .04, i * .05, 1.6); },
+  error: () => tone(160, .18, 'sawtooth', .05),
+};
+// Gentle generative lo-fi: random notes from a 4-chord loop through a soft echo.
+function startMusic() {
+  musicBus = AC.createGain(); musicBus.gain.value = .1;
+  const lp = AC.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1600;
+  const dl = AC.createDelay(1); dl.delayTime.value = .45;
+  const fb = AC.createGain(); fb.gain.value = .35;
+  musicBus.connect(lp); lp.connect(master); lp.connect(dl); dl.connect(fb); fb.connect(dl); dl.connect(master);
+  const chords = [[0, 4, 7, 11], [9, 12, 16, 19], [5, 9, 12, 16], [7, 11, 14, 17]];
+  let beat = 0, bar = 0;
+  setInterval(() => {
+    if (!S.sound || document.hidden || AC.state !== 'running') return;
+    if (++beat % 8 === 0) bar = (bar + 1) % chords.length;
+    const root = darkness() > .5 ? 196 : 261.63, c = chords[bar];
+    if (beat % 8 === 1) tone(root / 2 * 2 ** (c[0] / 12), 2.6, 'sine', .5, 0, 0, musicBus);
+    if (Math.random() < .5) tone(root * 2 ** ((pick(c) + (Math.random() < .35 ? 12 : 0)) / 12), 1.3, 'triangle', .3, 0, 0, musicBus);
+  }, 400);
+}
+
+// ---------------- UI ----------------
+let mode = 'play', placing = null, selDecor = null, drag = null, sel = null, scale = 1, cleanCD = 0, sellArm = 0, shopTab = 'fish';
+const pointer = { x: -99, y: -99, down: false };
+
+function toast(msg, cls = '') {
+  const box = $('toasts');
+  while (box.children.length > 3) box.firstChild.remove();
+  const el = document.createElement('div');
+  el.className = 'px toast ' + cls; el.textContent = msg;
+  box.append(el); setTimeout(() => el.remove(), 3100);
+}
+function openModal(id) { $(id).classList.add('open'); }
+function closeModals() { document.querySelectorAll('.modal.open').forEach(m => m.classList.remove('open')); }
+document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => { if (e.target === m || e.target.closest('[data-close]')) m.classList.remove('open'); }));
+
+function meter(id, v, cols = ['#e76f51', '#e9c46a', '#06d6a0']) { const e = $(id); e.style.width = clamp(v, 0, 100) + '%'; e.style.background = v < 30 ? cols[0] : v < 60 ? cols[1] : cols[2]; }
+function hud() {
+  $('coins').textContent = fmt(S.coins);
+  $('lvl').textContent = S.lvl;
+  meter('xpb', S.xp / xpNeed(S.lvl) * 100, ['#ffd166', '#ffd166', '#ffd166']);
+  $('pop').textContent = fish.length + '/' + cap();
+  meter('wat', 100 - S.dirt, ['#e76f51', '#e9c46a', '#4cc9f0']);
+  meter('hap', fish.length ? fish.reduce((a, f) => a + f.mood, 0) / fish.length : 0, ['#e76f51', '#e9c46a', '#ff8fc8']);
+  const dk = darkness();
+  $('clock').innerHTML = dk < .2 ? '☀️ <span class="lbl">Day</span>' : dk > .8 ? '🌙 <span class="lbl">Night</span>' : '🌅 <span class="lbl">Twilight</span>';
+  $('bClean').disabled = cleanCD > 0;
+  $('cleanTxt').textContent = cleanCD > 0 ? Math.ceil(cleanCD) + 's' : 'Clean';
+  if (sel) panel();
+}
+
+// Fish panel
+function openPanel(f) { sel = f; sellArm = 0; $('fpName').value = f.name; $('fishPanel').classList.add('open'); panel(); }
+function closePanel() { sel = null; $('fishPanel').classList.remove('open'); }
+function panel() {
+  const f = sel;
+  if (!fish.includes(f)) return closePanel();
+  const s = SPECIES[f.sp], a = f.age | 0;
+  $('fpSp').textContent = (f.v !== 'normal' ? VARIANTS[f.v].name + ' ' : '') + s.name;
+  $('fpStage').textContent = isAdult(f) ? 'Adult' : 'Baby ' + Math.floor(f.age / grow(s) * 100) + '%';
+  meter('fpHun', f.hunger); meter('fpMood', f.mood);
+  $('fpAge').textContent = a < 60 ? a + 's' : a < 3600 ? (a / 60 | 0) + 'm' : (a / 3600 | 0) + 'h ' + (a % 3600 / 60 | 0) + 'm';
+  if (!sellArm) $('fpSell').textContent = 'Sell 🪙' + sellValue(f);
+}
+$('fpName').addEventListener('input', e => { if (sel) sel.name = e.target.value.trim().slice(0, 14) || sel.name; });
+$('fpName').addEventListener('keydown', e => { if (e.key === 'Enter') e.target.blur(); });
+$('fpClose').onclick = closePanel;
+$('fpSell').onclick = () => {
+  if (!sel) return;
+  if (!sellArm) { sellArm = 1; $('fpSell').textContent = 'Sure? Tap again'; setTimeout(() => { sellArm = 0; }, 2500); return; }
+  const v = sellValue(sel);
+  S.coins += v; floatText(sel.x, sel.y - 8, '+' + v); spark(sel.x, sel.y, 10, '#ffd166');
+  toast('Bye ' + sel.name + '! Sold for ' + v + ' coins'); SFX.coin();
+  fish.splice(fish.indexOf(sel), 1); closePanel(); sellArm = 0;
+};
+
+function petFish(f) {
+  if (f.sp === 'puffer') { f.puff = 2.5; SFX.puff(); } else SFX.pet();
+  hearts(f.x, f.y - 4, 2);
+  if (f.petT <= 0) { f.petT = 10; f.mood = Math.min(100, f.mood + 6); gainXP(1); }
+  if (!isFloor(SPECIES[f.sp])) { f.vx += rnd(-20, 20); f.vy -= 10; }
+}
+
+// Hit tests (touch gets a bigger target)
+const pad = () => Math.max(4, 14 / scale);
+function hitFish(p) {
+  let best = null, bd = 1e9;
+  for (const f of fish) {
+    const img = spriteFor(f), sc = f.puff > 0 ? 2 : 1, cy = isFloor(SPECIES[f.sp]) ? f.y - img.height / 2 : f.y;
+    const dx = Math.abs(p.x - f.x), dy = Math.abs(p.y - cy);
+    if (dx < img.width * sc / 2 + pad() && dy < img.height * sc / 2 + pad() && dx * dx + dy * dy < bd) { bd = dx * dx + dy * dy; best = f; }
+  }
+  return best;
+}
+function hitDecor(p) {
+  for (const d of decor.slice().sort((a, b) => b.y - a.y)) { const D = DECOR[d.id]; if (Math.abs(p.x - d.x) < D.w / 2 + pad() && p.y > d.y - D.h - pad() && p.y < d.y + pad()) return d; }
+  return null;
+}
+function collectAt(p) {
+  const r = Math.max(9, 20 / scale);
+  let got = false;
+  for (let i = coins.length - 1; i >= 0; i--) { const c = coins[i]; if (Math.abs(c.x - p.x) < r && Math.abs(c.y - p.y) < r) { collect(c); got = true; } }
+  return got;
+}
+
+// Pointer input: one handler for mouse + touch
+function pos(e) { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * W, y: (e.clientY - r.top) / r.height * H }; }
+cv.addEventListener('pointerdown', e => {
+  audio();
+  const p = pos(e); Object.assign(pointer, p, { down: true });
+  try { cv.setPointerCapture(e.pointerId); } catch (_) {}
+  if (placing) return place(p);
+  if (mode === 'edit') { selDecor = hitDecor(p); drag = selDecor ? { dx: selDecor.x - p.x, dy: selDecor.y - p.y } : null; return banner(); }
+  if (visitor && !visitor.tapped && Math.abs(p.x - visitor.x) < 12 + pad() && Math.abs(p.y - visitor.y) < 8 + pad()) return tapVisitor();
+  if (collectAt(p)) return;
+  const f = hitFish(p);
+  if (f) { petFish(f); return openPanel(f); }
+  if (sel) closePanel();
+  if (p.y < SAND + 2) { dropFood(p.x); SFX.plop(); parts.push({ k: 'ring', x: p.x, y: SURF + 1, vx: 0, vy: 0, life: 1 }); }
+});
+cv.addEventListener('pointermove', e => {
+  const p = pos(e); pointer.x = p.x; pointer.y = p.y;
+  if (drag && selDecor) { selDecor.x = clamp(p.x + drag.dx, 6, W - 6); selDecor.y = clamp(p.y + drag.dy, SAND + 4, H - 2); }
+  else if (pointer.down && mode === 'play' && !placing) collectAt(p); // swipe to collect
+});
+const up = () => { pointer.down = false; drag = null; };
+cv.addEventListener('pointerup', up);
+cv.addEventListener('pointercancel', up);
+cv.addEventListener('pointerleave', () => { if (!pointer.down) pointer.x = -99; });
+
+function place(p) {
+  const D = DECOR[placing];
+  if (S.coins < D.price) { toast('Not enough coins 🪙'); SFX.error(); placing = null; return banner(); }
+  if (decor.length >= 30) { toast('Tank is full of decor! Sell something first.'); placing = null; return banner(); }
+  S.coins -= D.price;
+  const d = { id: placing, x: clamp(p.x, 6, W - 6), y: clamp(p.y, SAND + 4, H - 2), ph: rnd(0, 6), tm: 0 };
+  decor.push(d); spark(d.x, d.y - 4, 10, '#fff8d6'); SFX.buy(); gainXP(Math.max(1, D.price / 10 | 0));
+  toast(D.name + ' placed! ✨'); placing = null; banner();
+}
+function banner() {
+  const b = $('banner'), sellB = $('bannerSell');
+  $('bEdit').classList.toggle('on', mode === 'edit');
+  if (placing) { b.style.display = 'flex'; $('bannerTxt').textContent = 'Tap the tank to place ' + DECOR[placing].name; sellB.style.display = 'none'; $('bannerBtn').textContent = 'Cancel'; }
+  else if (mode === 'edit') {
+    b.style.display = 'flex';
+    $('bannerTxt').textContent = selDecor ? DECOR[selDecor.id].name + ': drag to move' : 'Tap decor to select, drag to move';
+    sellB.style.display = selDecor ? '' : 'none';
+    if (selDecor) sellB.textContent = 'Sell 🪙' + (DECOR[selDecor.id].price >> 1);
+    $('bannerBtn').textContent = 'Done';
+  } else b.style.display = 'none';
+}
+$('bannerBtn').onclick = () => { placing = null; mode = 'play'; selDecor = null; banner(); };
+$('bannerSell').onclick = () => {
+  if (!selDecor) return;
+  const v = DECOR[selDecor.id].price >> 1;
+  S.coins += v; spark(selDecor.x, selDecor.y - 5, 10, '#ffd166');
+  decor.splice(decor.indexOf(selDecor), 1); selDecor = null;
+  SFX.coin(); toast('Sold for ' + v + ' coins'); banner();
+};
+
+// Toolbar
+$('bFeed').onclick = () => { audio(); for (let i = 0; i < 6; i++) dropFood(rnd(16, W - 16), 1); SFX.plop(); };
+$('bClean').onclick = () => {
+  audio();
+  if (cleanCD > 0) return;
+  const was = S.dirt; S.dirt = 0; poop.length = 0; cleanCD = 30;
+  for (let i = 0; i < 60; i++) bubble(rnd(4, W - 4), rnd(SAND - 20, H), 1);
+  SFX.clean(); gainXP(was > 30 ? 5 : 1);
+  toast(was > 30 ? '✨ Sparkling clean! Fish feel better.' : '✨ Already pretty clean!');
+};
+$('bShop').onclick = () => { audio(); renderShop(); openModal('shop'); };
+$('bEdit').onclick = () => { audio(); placing = null; mode = mode === 'edit' ? 'play' : 'edit'; selDecor = null; closePanel(); banner(); };
+$('bDex').onclick = () => { audio(); renderDex(); openModal('dex'); };
+$('bLight').onclick = () => { S.light = (S.light + 1) % 3; lightBtn(); };
+$('bSound').onclick = () => { audio(); S.sound = S.sound ? 0 : 1; if (master) master.gain.value = S.sound ? .5 : 0; soundBtn(); };
+function lightBtn() { $('lightIc').textContent = ['💡', '☀️', '🌙'][S.light]; $('lightTxt').textContent = ['Auto', 'Day', 'Night'][S.light]; }
+function soundBtn() { $('soundIc').textContent = S.sound ? '🔊' : '🔇'; }
+
+// Shop
+function cardArt(draw, w = 48, h = 32) { const c = canvas(w, h), g = c.getContext('2d'); g.imageSmoothingEnabled = false; draw(g, w, h); return c; }
+function fitSprite(g, img, w, h, bottom) {
+  const s = Math.max(1, Math.floor(Math.min((w - 4) / img.width, (h - 4) / img.height)));
+  g.drawImage(img, (w - img.width * s) / 2 | 0, bottom ? h - 2 - img.height * s : (h - img.height * s) / 2 | 0, img.width * s, img.height * s);
+}
+const artSprite = img => cardArt((g, w, h) => fitSprite(g, img, w, h));
+function card({ art, name, price, desc, lock, poor, onClick }) {
+  const el = document.createElement('div');
+  el.className = 'card' + (lock ? ' lock' : '') + (poor ? ' poor' : '');
+  el.tabIndex = 0; el.setAttribute('role', 'button');
+  if (typeof art === 'string') { const a = document.createElement('div'); a.className = 'art'; a.textContent = art; el.append(a); } else el.append(art);
+  for (const [cls, txt] of [['nm', name], ['pr', price], ['ds', desc]]) { const d = document.createElement('div'); d.className = cls; d.textContent = txt; el.append(d); }
+  el.onclick = onClick;
+  el.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } };
+  return el;
+}
+function renderShop() {
+  $('shopCoins').textContent = '🪙 ' + fmt(S.coins) + ' · LV ' + S.lvl;
+  const tabs = $('shopTabs'), grid = $('shopGrid');
+  tabs.innerHTML = ''; grid.innerHTML = '';
+  for (const [k, l] of [['fish', '🐠 Fish'], ['decor', '🪸 Decor'], ['up', '⚙️ Upgrades']]) {
+    const b = document.createElement('button'); b.className = 'tab' + (shopTab === k ? ' on' : ''); b.textContent = l;
+    b.onclick = () => { shopTab = k; renderShop(); }; tabs.append(b);
+  }
+  if (shopTab === 'fish') for (const [id, s] of Object.entries(SPECIES)) {
+    if (s.visitor) continue;
+    const lock = S.lvl < s.lvl;
+    grid.append(card({ art: artSprite(fishSprite(id)), name: s.name, price: lock ? '🔒 LV ' + s.lvl : '🪙 ' + s.price, desc: s.desc + ' +' + s.coin + '/coin', lock, poor: !lock && S.coins < s.price, onClick: () => buyFish(id) }));
+  }
+  if (shopTab === 'decor') for (const [id, D] of Object.entries(DECOR)) {
+    const lock = S.lvl < D.lvl;
+    const art = cardArt((g, w, h) => D.plant && !IMG['decor_' + id] ? PLANTS[id](g, w / 2, h - 2, 0) : fitSprite(g, decorSprite(id), w, h, true));
+    grid.append(card({ art, name: D.name, price: lock ? '🔒 LV ' + D.lvl : '🪙 ' + D.price, desc: D.desc + ' +' + D.beauty + ' beauty', lock, poor: !lock && S.coins < D.price, onClick: () => buyDecor(id) }));
+  }
+  if (shopTab === 'up') for (const [id, U] of Object.entries(UPGRADES)) {
+    const lv = S.up[id], max = lv >= U.cost.length, cost = U.cost[lv];
+    grid.append(card({ art: U.icon, name: U.name + ' ' + '★'.repeat(lv) + '☆'.repeat(U.cost.length - lv), price: max ? 'MAXED' : '🪙 ' + cost, desc: U.desc, poor: !max && S.coins < cost, onClick: () => buyUpgrade(id) }));
+  }
+}
+function buyFish(id) {
+  const s = SPECIES[id];
+  if (S.lvl < s.lvl) { toast('Reach level ' + s.lvl + ' to unlock ' + s.name); return SFX.error(); }
+  if (fish.length >= cap()) { toast('Tank is full! Get a Bigger Tank or sell a fish.'); return SFX.error(); }
+  if (S.coins < s.price) { toast('Need ' + (s.price - S.coins) + ' more coins'); return SFX.error(); }
+  S.coins -= s.price;
+  const f = newFish(id, 'normal', isFloor(s) ? {} : { y: SURF + 6 });
+  fish.push(f); dexAdd(id, 'normal'); gainXP(Math.max(1, s.price / 5 | 0));
+  for (let i = 0; i < 12; i++) bubble(f.x + rnd(-6, 6), f.y + rnd(0, 6), 1);
+  SFX.buy(); toast('Welcome, ' + f.name + ' the ' + s.name + '! 💖'); closeModals();
+}
+function buyDecor(id) {
+  const D = DECOR[id];
+  if (S.lvl < D.lvl) { toast('Reach level ' + D.lvl + ' to unlock ' + D.name); return SFX.error(); }
+  if (S.coins < D.price) { toast('Need ' + (D.price - S.coins) + ' more coins'); return SFX.error(); }
+  placing = id; mode = 'play'; selDecor = null; closeModals(); closePanel(); banner();
+}
+function buyUpgrade(id) {
+  const U = UPGRADES[id], lv = S.up[id];
+  if (lv >= U.cost.length) return;
+  if (S.coins < U.cost[lv]) { toast('Need ' + (U.cost[lv] - S.coins) + ' more coins'); return SFX.error(); }
+  S.coins -= U.cost[lv]; S.up[id]++; gainXP(10); SFX.buy(); toast(U.icon + ' ' + U.name + ' upgraded!'); renderShop();
+}
+
+// Fishdex
+const VCOL = { normal: '#9fb3c8', gold: '#ffd166', ghost: '#e0f2ff', midnight: '#8c7bff' };
+function renderDex() {
+  const grid = $('dexGrid'); grid.innerHTML = '';
+  let got = 0, total = 0;
+  for (const [id, s] of Object.entries(SPECIES)) {
+    const found = S.dex[id] || [], vs = s.visitor ? ['normal'] : Object.keys(VARIANTS), known = found.length > 0;
+    total += vs.length; got += found.length;
+    const el = card({ art: artSprite(fishSprite(id, found.find(v => v !== 'normal') || 'normal')), name: known ? s.name : '???', price: '', desc: known ? s.desc : s.visitor ? 'A rare visitor...' : 'Unlocks at LV ' + s.lvl, lock: !known, onClick: () => {} });
+    const dots = el.querySelector('.pr'); dots.className = 'vdots';
+    dots.innerHTML = vs.map(v => `<span title="${VARIANTS[v].name}" style="color:${found.includes(v) ? VCOL[v] : '#2a3a5f'}">◆</span>`).join('');
+    grid.append(el);
+  }
+  $('dexCount').textContent = got + ' / ' + total + ' found. Breed happy pairs for rare colors!';
+}
+
+// Layout: pick an internal resolution that matches the screen shape, then scale up crisp.
+function fit() {
+  const small = innerWidth <= 640, frame = small ? 14 : 26;
+  const aw = Math.max(160, innerWidth - (small ? 24 : 32) - frame);
+  const ah = Math.max(140, innerHeight - $('hud').offsetHeight - $('bar').offsetHeight - (small ? 30 : 44) - frame);
+  const asp = aw / ah, oW = W, oH = H, oS = SAND;
+  // Short side shrinks on small screens so fish stay big enough to tap (~2x scale minimum).
+  if (asp >= 1) { H = clamp(Math.round(ah / 2), 130, 180); W = clamp(Math.round(H * asp), 240, 400); }
+  else { W = clamp(Math.round(aw / 2.3), 130, 170); H = clamp(Math.round(W / asp), 200, 340); }
+  SAND = H - (H < 160 ? 24 : 30);
+  let s = Math.min(aw / W, ah / H);
+  if (s >= 3) s = Math.floor(s);
+  scale = s;
+  cv.style.width = Math.floor(W * s) + 'px';
+  cv.style.height = Math.floor(H * s) + 'px';
+  if (oW !== W || oH !== H) {
+    cv.width = W; cv.height = H; ctx.imageSmoothingEnabled = false;
+    remap(oW, oH, oS); ALGAE = makeAlgae(); snow = makeSnow(); bgDirty = true;
+  }
+}
+addEventListener('resize', fit);
+if (document.fonts) document.fonts.ready.then(fit);
+
+addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.key !== 'Escape') return;
+  if (document.querySelector('.modal.open')) closeModals();
+  else if (placing || mode === 'edit') { placing = null; mode = 'play'; selDecor = null; banner(); }
+  else closePanel();
+});
+
+let hiddenAt = 0, last = performance.now(), hudT = 0;
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { hiddenAt = Date.now(); save(); }
+  else if (hiddenAt) { offline((Date.now() - hiddenAt) / 1000); hiddenAt = 0; last = performance.now(); }
+});
+addEventListener('pagehide', save);
+
+function frame(now) {
+  const dt = Math.min(.05, (now - last) / 1000); last = now;
+  update(dt);
+  if (cleanCD > 0) cleanCD = Math.max(0, cleanCD - dt);
+  render();
+  if ((hudT -= dt) <= 0) { hudT = .25; hud(); }
+  requestAnimationFrame(frame);
+}
+
+// ---------------- Boot ----------------
+fit();
+ALGAE = makeAlgae(); snow = makeSnow();
+const returning = load();
+lightBtn(); soundBtn(); banner(); hud();
+if (returning) offline((Date.now() - S.t) / 1000);
+else {
+  setTimeout(() => toast('🐟 Welcome to Pixel Reef! Tap the water to feed your fish.'), 600);
+  setTimeout(() => toast('🪙 Tap or swipe coins to collect them.'), 4200);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

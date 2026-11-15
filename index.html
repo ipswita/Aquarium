@@ -76,7 +76,7 @@ body.zen #goal{display:none}
 .card .nm{font-size:16px}
 .card .pr{color:var(--gold);font-size:15px}
 .card .ds{color:var(--mute);font-size:13px;line-height:1.25;white-space:pre-line}
-.card .tag{font-size:12px;padding:1px 6px;border-radius:3px;background:#24365f;color:var(--sky)}
+.card .tag{font-size:14px;padding:2px 8px;border-radius:3px;background:#24365f;color:var(--sky)}
 .card .tag.salt{color:#ffd1f0;background:#4a2350}
 .card .tag.bad{color:#ffc2c2;background:#5a1f24}
 .card.lock{opacity:.55;cursor:default}
@@ -91,7 +91,8 @@ body.zen #goal{display:none}
 #fpSp{color:var(--sky)}
 #fpNote{color:var(--mute);font-size:12px;line-height:1.3;margin:4px 0}
 #welcome .sheet{width:min(440px,100%);text-align:center;font-size:17px;line-height:1.4}
-#welcome .btn{margin:6px auto 0}
+#welcome .btn{margin:10px auto 0;width:100%;min-height:50px;font-size:18px;justify-content:center}
+#welcome small{color:var(--mute);font-size:14px}
 @media (max-width:640px){
  body{gap:6px;padding-left:max(8px,env(safe-area-inset-left));padding-right:max(8px,env(safe-area-inset-right))}
  #hud,#bar{gap:4px;width:100%}
@@ -112,7 +113,9 @@ body.zen #goal{display:none}
  #toasts{top:8px;max-width:calc(100% - 96px)}
  .grid{grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:6px}
  .card canvas,.card .art{width:80px;height:54px}
- .card .nm{font-size:15px}.card .ds{font-size:13px}.card .tag{font-size:12px}
+ .card .nm{font-size:15px}.card .ds{font-size:12px}.card .tag{font-size:13px}
+ #nextUn{display:none}
+ #tankTag{font-size:12px}
  .x{font-size:28px;padding:6px 12px}
  .sheet{padding:10px;max-height:92dvh}
  .toast{font-size:13px}
@@ -333,7 +336,7 @@ const DECOR = {
 const FILTER = [0, .3, .55, .75, .9];
 const UPGRADES = {
   tank:   { name: 'Bigger Tank',  icon: '📦', cost: [150, 400, 1000, 2500, 6000, 15000], desc: '+3 fish in every tank' },
-  filter: { name: 'Water Filter', icon: '🌀', cost: [60, 180, 450, 1200],   desc: 'Water gets dirty slower. Level 4 cleans itself!' },
+  filter: { name: 'Water Filter', icon: '🌀', cost: [60, 180, 450, 1200],   desc: 'Dirt builds 30% / 55% / 75% slower. Level 4 cleans itself!' },
   feeder: { name: 'Auto Feeder',  icon: '🥣', cost: [80, 250, 600],         desc: 'Feeds hungry fish for you' },
   magnet: { name: 'Coin Magnet',  icon: '🧲', cost: [120],                  desc: 'Coins bank instantly when they land' },
   light:  { name: 'Reef Lights',  icon: '🔆', cost: [150, 400],             desc: '+15% coins per level' },
@@ -571,13 +574,23 @@ const isAdult = f => f.age >= grow(SPECIES[f.sp]);
 const vmult = f => f.v === 'normal' ? 1 : 3;
 const sellValue = f => Math.round(SPECIES[f.sp].price * (isAdult(f) ? .6 : .25) * vmult(f));
 const wrongWater = f => INFO[f.sp][0] !== 'any' && INFO[f.sp][0] !== S.water;
+// Who bothers whom (real fishkeeping): predators and fin-nippers scare these tankmates.
+const BULLY = { angel: ['tetra'], betta: ['guppy'], lion: ['clown', 'horse'], puffer: ['horse'] };
+const scaredOf = f => fish.find(o => o !== f && isAdult(o) && BULLY[o.sp] && BULLY[o.sp].includes(f.sp));
+const lonely = f => SPECIES[f.sp].school && fish.filter(o => o.sp === f.sp).length < 3;
+const stressed = f => wrongWater(f) || !!scaredOf(f);
+const crowded = () => fish.length >= cap();
+// live coins/min for a list of fish (same rule the coin timer uses)
+const liveRate = list => list.reduce((a, f) => a + (isAdult(f) && f.hunger > 15 ? fishRate(f.sp, f.v) * (f.mood > 50 ? 1 : .4) : 0), 0);
+const fmtRate = r => (r < 10 ? r.toFixed(1) : fmt(r));
 
 function initFish(f) {
   return Object.assign(f, { vx: 0, vy: 0, dir: Math.random() < .5 ? -1 : 1, tx: f.x, ty: f.y, tt: 0, ph: rnd(0, 6.28), next: rnd(5, 12), petT: 0, puff: 0, poopT: rnd(20, 40), wf: rnd(8, 12), off: [rnd(-10, 10), rnd(-6, 6)] });
 }
 function newFish(sp, v = 'normal', o = {}) {
   const s = SPECIES[sp];
-  return initFish(Object.assign({ id: uid++, sp, v, name: pick(NAMES), x: rnd(30, W - 30), y: isFloor(s) ? rnd(SAND + 6, H - 5) : rnd(30, SAND - 20), age: grow(s) + 1, hunger: 80, mood: 70 }, o));
+  const sc = s.school && school[sp];
+  return initFish(Object.assign({ id: uid++, sp, v, name: pick(NAMES), x: sc ? sc.x + rnd(-8, 8) : rnd(30, W - 30), y: isFloor(s) ? rnd(SAND + 6, H - 5) : sc ? sc.y + rnd(-5, 5) : rnd(30, SAND - 20), age: grow(s) + 1, hunger: 80, mood: 70 }, o));
 }
 function clampFish(f) {
   f.x = clamp(f.x, 8, W - 8);
@@ -638,7 +651,10 @@ function switchTank() {
 function tankUI() {
   const t = $('tankTag');
   t.classList.toggle('show', !!S.reef);
-  t.textContent = S.water === 'salt' ? '🌊 Reef ⇄' : '💧 Fresh ⇄';
+  const o = S.other, ofish = o ? o.fish.filter(f => SPECIES[f.sp]) : [];
+  const orate = ofish.reduce((a, f) => a + (f.age >= grow(SPECIES[f.sp]) ? fishRate(f.sp, f.v) : 0), 0);
+  const alert = ofish.some(f => f.hunger < 30 || (INFO[f.sp][0] !== 'any' && o && INFO[f.sp][0] !== o.water));
+  t.textContent = (S.water === 'salt' ? '🌊 Reef' : '💧 Fresh') + ' ⇄ ' + (S.water === 'salt' ? '💧' : '🌊') + '+' + fmtRate(orate) + '/min' + (alert ? ' ❗' : '');
   t.title = 'Switch to your ' + (S.water === 'salt' ? 'Freshwater' : 'Reef') + ' tank';
 }
 
@@ -803,6 +819,8 @@ function updateFish(f, dt, dk) {
   const home = s.home && decor.some(d => d.id === s.home && Math.abs(d.x - f.x) < 30) ? .15 : 0;
   let want = clamp((f.hunger > 40 ? 1 : f.hunger / 40) * .55 + (1 - S.dirt / 100) * .3 + beautyF * .15 + home - crowd, 0, 1) * 100;
   if (wrongWater(f)) want = Math.min(want, 35); // stressed in the wrong water: no breeding, slow coins
+  else if (scaredOf(f)) want = Math.min(want, 50); // hiding from a bully
+  if (lonely(f)) want = Math.min(want, 60);        // schooling fish want 3+ friends
   f.mood += (want - f.mood) * Math.min(1, dt * .08);
   if (f.petT > 0) f.petT -= dt;
   if (f.puff > 0) f.puff -= dt;
@@ -872,8 +890,10 @@ function tryBreed() {
   for (const sp in by) if (by[sp].length >= 2 && Math.random() < .3) {
     const [a, b] = by[sp].sort(() => Math.random() - .5);
     hearts(a.x, a.y); hearts(b.x, b.y);
-    eggs.push({ sp, v: rollVariant(a, b), x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, ry: rnd(SAND + 3, H - 5), t: 22 });
-    toast('💕 ' + a.name + ' & ' + b.name + ' laid an egg!', 'pink'); SFX.pet(); gainXP(15); goal('egg');
+    const e = { sp, v: rollVariant(a, b), x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, ry: rnd(SAND + 3, H - 5), t: 22 };
+    SFX.pet(); gainXP(15); goal('egg');
+    if (sp === 'guppy' || sp === 'horse') { e.live = 1; e.ry = e.y; hatch(e); } // live-bearers: babies are born, no egg
+    else { eggs.push(e); toast('💕 ' + a.name + ' & ' + b.name + ' laid an egg!', 'pink'); }
     return;
   }
 }
@@ -889,7 +909,7 @@ function hatch(e) {
   spark(e.x, e.ry, 24, '#fff1c1', 30); hearts(e.x, e.ry - 4, 4); bump();
   const rare = e.v !== 'normal';
   if (!S.zen && !document.querySelector('.modal.open')) openPanel(f); // say hi + rename the baby
-  toast((rare ? '✨ A ' + VARIANTS[e.v].name + ' ' : '🐣 A baby ') + SPECIES[e.sp].name + ' hatched! Say hi to ' + f.name, rare ? 'gold' : '');
+  toast((rare ? '✨ A ' + VARIANTS[e.v].name + ' ' : '🐣 A baby ') + SPECIES[e.sp].name + (e.live ? (e.sp === 'horse' ? ' was born from dad\'s pouch!' : ' was born!') : ' hatched!') + ' Say hi to ' + f.name, rare ? 'gold' : 'pink');
   rare ? SFX.pearl() : SFX.buy();
 }
 function spawnVisitor() {
@@ -950,7 +970,7 @@ function update(dt) {
     }
   }
   if (Math.random() < dt * .8) bubble(rnd(0, W), SAND + 2);
-  S.dirt = clamp(S.dirt + dt * .045 * (1 - FILTER[S.up.filter]) * (1 + fish.length / 10), 0, 100);
+  S.dirt = clamp(S.dirt + dt * .045 * (1 - FILTER[S.up.filter]) * (1 + fish.length / 10) * (crowded() ? 1.5 : 1), 0, 100); // a packed tank dirties faster
   if (S.up.filter >= 4 && S.dirt > 45) { S.dirt = 0; poop.length = 0; for (let i = 0; i < 30; i++) bubble(rnd(4, W - 4), rnd(SAND - 10, H), 1); }
   if ((timers.breed -= dt) <= 0) { timers.breed = 15; tryBreed(); }
   if (S.up.feeder && (timers.feeder -= dt) <= 0) {
@@ -981,10 +1001,10 @@ function catchUp(sec) {
 function offline(sec, gift = 0) {
   if (sec < 60 && !gift) return;
   sec = sec < 60 ? 0 : Math.min(sec, 8 * 3600);
-  const earn = catchUp(sec);
+  const live = liveRate(fish), earn = catchUp(sec);
   if (S.zen) return;
   const h = sec / 3600 | 0, m = (sec % 3600) / 60 | 0;
-  $('welcomeTxt').innerHTML = (sec ? `You were away for <b>${h ? h + 'h ' : ''}${m}m</b>.<br>Your fish made <b style="color:var(--gold)">🪙 ${fmt(earn)}</b> while you were gone!` : '') +
+  $('welcomeTxt').innerHTML = (sec ? `You were away for <b>${h ? h + 'h ' : ''}${m}m</b>.<br>Your fish made <b style="color:var(--gold)">🪙 ${fmt(earn)}</b> while you were gone!<br><small>Away time pays 25% of your live rate (+${fmtRate(live)}/min → ~${fmtRate(live / 4)}/min), up to 8h.${S.reef ? ' Your other tank catches up when you visit it.' : ''}</small>` : '') +
     (gift ? `${sec ? '<br><br>' : ''}🎁 Daily gift: <b style="color:var(--gold)">🪙 ${gift}</b><br>🔥 ${S.streak}-day streak${S.streak < 7 ? ' (bigger gift tomorrow!)' : '!'}<br>🎯 3 new daily goals are waiting.` : '') +
     (S.dirt > 50 ? '<br><br>The water got a bit murky. Give it a clean 🧽' : '') + (fish.some(f => f.hunger < 30) ? '<br>Some fish look hungry 🍤' : '');
   openModal('welcome');
@@ -1000,9 +1020,9 @@ const waterAt = y => { const k = clamp(y / SAND, 0, 1), [a, b] = WATER[S.water] 
 const px = (g, x, y, rgb) => { g.fillStyle = toHex(rgb); g.fillRect(x, y, 1, 1); };
 // lumpy shaded boulder pile; `haze` blends it into the water for depth
 function rockPile(g, r, cx, base, w, h, haze) {
-  const moss = hx('#4f8a4a');
+  const reef = S.water === 'salt', moss = hx(reef ? '#d46a9a' : '#4f8a4a'); // reef: pink coralline on live rock
   for (let b = 0, n = 3 + (r() * 3 | 0); b < n; b++) {
-    const bw = w * (.4 + r() * .45), bh = h * (.45 + r() * .55), bx = cx + (r() - .5) * (w - bw), tint = shadeRGB(hx('#7b8494'), (r() - .5) * .25);
+    const bw = w * (.4 + r() * .45), bh = h * (.45 + r() * .55), bx = cx + (r() - .5) * (w - bw), tint = shadeRGB(hx(reef ? '#93808f' : '#7b8494'), (r() - .5) * .25);
     for (let y = 0; y < bh; y++) {
       const yy = y / bh, hw = bw / 2 * Math.sqrt(1 - yy * yy) * (.88 + .12 * Math.sin(y * 1.3 + b * 2));
       for (let x = Math.floor(-hw); x < hw; x++) {
@@ -1010,7 +1030,7 @@ function rockPile(g, r, cx, base, w, h, haze) {
         let f = yy * .28 - nx * .16 - .12;
         if (r() < .1) f -= .1;
         if (Math.abs(nx) > .92 || yy > .96) f -= .12;
-        px(g, X, Y, lerpRGB(shadeRGB(yy > .72 && r() < .5 ? moss : tint, f), waterAt(Y), haze));
+        px(g, X, Y, lerpRGB(shadeRGB((reef ? r() < .18 : yy > .72 && r() < .5) ? moss : tint, f), waterAt(Y), haze));
       }
     }
   }
@@ -1035,6 +1055,7 @@ function bakeBG() {
   }
   SCENERY = [{ id: 'kelp', x: W * .15, ph: 1 }, { id: 'seaweed', x: W * .05, ph: 2 }, { id: 'seaweed', x: W * .85, ph: 3 }, { id: 'kelp', x: W * .96, ph: 4 }];
   if (W > 260) SCENERY.push({ id: 'seaweed', x: W * .47, ph: 5 }, { id: 'kelp', x: W * .64, ph: 6 }, { id: 'seaweed', x: W * .3, ph: 7 });
+  if (S.water === 'salt') SCENERY.forEach((o, i) => { if (o.id === 'seaweed' && i % 2) o.id = 'anemone'; });
   SCENERY.forEach((o, i) => o.y = SAND + 2 + (i % 3));
   if (IMG.bg) { g.imageSmoothingEnabled = false; g.drawImage(IMG.bg, 0, 0, W, H); return; }
   for (let y = 0; y < H; y++) R(g, 0, y, W, 1, toHex(waterAt(y)));
@@ -1044,7 +1065,7 @@ function bakeBG() {
   });
   for (let i = 0; i < W / 22; i++) { const x = r() * W | 0, h = 20 + r() * 50 | 0; for (let j = 0; j < h; j++) R(g, x + Math.round(Math.sin(j * .12 + i) * 2), SAND - j, 2, 1, '#13577f'); }
   // faded corals on the back reef
-  for (let i = 0; i < Math.max(3, W / 60); i++) { const x = r() * W, col = lerpRGB(hx(['#ff7fa8', '#c77dff', '#ffa94d', '#5ee0c8'][i % 4]), waterAt(SAND - 20), .55); coralTree(g, r, x, SAND - 1, 6 + r() * 6, Math.PI / 2 + (r() - .5) * .4, 2, col); }
+  for (let i = 0, n = Math.max(3, W / (S.water === 'salt' ? 30 : 60)); i < n; i++) { const x = r() * W, col = lerpRGB(hx(['#ff7fa8', '#c77dff', '#ffa94d', '#5ee0c8'][i % 4]), waterAt(SAND - 20), S.water === 'salt' ? .3 : .55); coralTree(g, r, x, SAND - 1, 6 + r() * 6, Math.PI / 2 + (r() - .5) * .4, 2, col); }
   // hardscape: a far rock pile and two big ones framing the sides
   rockPile(g, r, W * .55, SAND + 1, Math.min(48, W * .3), 18, .5);
   rockPile(g, r, W * .06, SAND + 3, Math.min(74, W * .42), Math.min(52, SAND * .38), .18);
@@ -1054,7 +1075,7 @@ function bakeBG() {
     const cx = r() * W | 0;
     for (let b = 0, n = 3 + (r() * 4 | 0); b < n; b++) { const x = cx + (r() * 8 - 4) | 0, h = 3 + r() * 7 | 0; for (let i = 0; i < h; i++) px(g, x + Math.round((r() - .5) * .8 * i / 3), SAND + 1 - i, lerpRGB(hx(i > h - 2 ? '#7ed06b' : '#3f9a4a'), waterAt(SAND), .25)); }
   }
-  const sandCols = Array.from({ length: H - SAND + 4 }, (_, i) => mix('#f2d49b', '#c99c5f', clamp(i / (H - SAND), 0, 1)));
+  const sandCols = Array.from({ length: H - SAND + 4 }, (_, i) => S.water === 'salt' ? mix('#f8ecd4', '#d6c09a', clamp(i / (H - SAND), 0, 1)) : mix('#f2d49b', '#c99c5f', clamp(i / (H - SAND), 0, 1)));
   for (let x = 0; x < W; x++) {
     const top = SAND + Math.round(Math.sin(x * .05) * 1.5 + Math.sin(x * .13 + 1));
     for (let y = top; y < H; y++) { const n = r(); R(g, x, y, 1, 1, n < .06 ? '#b38b52' : n < .1 ? '#fff0c9' : sandCols[Math.max(0, y - SAND)]); }
@@ -1122,7 +1143,7 @@ function drawFish(f) {
     }
   }
   ctx.restore();
-  if (wrongWater(f) && Math.sin(T * 3 + f.ph) > .3) { const dx = x + (w >> 1) - 2, dy = y - (h >> 1) - 2; R(ctx, dx + 1, dy, 1, 1, '#bfe8ff'); R(ctx, dx, dy + 1, 3, 2, '#5ab4ff'); R(ctx, dx + 1, dy + 3, 1, 1, '#2f7fd0'); }
+  if (stressed(f) && Math.sin(T * 3 + f.ph) > .3) { const dx = x + (w >> 1) - 2, dy = y - (h >> 1) - 2; R(ctx, dx + 1, dy, 1, 1, '#bfe8ff'); R(ctx, dx, dy + 1, 3, 2, '#5ab4ff'); R(ctx, dx + 1, dy + 3, 1, 1, '#2f7fd0'); }
   if (f.hunger < 25 && Math.sin(T * 4 + f.ph) > .2) { const by = y - (h >> 1) - 7; R(ctx, x - 2, by, 5, 4, '#ffffff'); R(ctx, x - 1, by + 1, 3, 2, '#c8553d'); R(ctx, x, by + 4, 1, 1, '#ffffff'); }
 }
 function drawCritter(f) {
@@ -1333,26 +1354,29 @@ function hud() {
   $('lvl').textContent = S.lvl;
   meter('xpb', S.xp / xpNeed(S.lvl) * 100, ['#ffd166', '#ffd166', '#ffd166']);
   $('pop').textContent = fish.length + '/' + cap();
-  const wrong = fish.filter(wrongWater).length;
-  $('popNote').textContent = wrong ? wrong + ' stressed' : S.reef ? (S.water === 'salt' ? 'reef' : 'fresh') : 'fish';
-  $('popNote').classList.toggle('warn', wrong > 0);
+  const wrong = fish.filter(stressed).length;
+  $('popNote').textContent = wrong ? wrong + ' stressed' : crowded() ? 'crowded' : S.reef ? (S.water === 'salt' ? 'reef' : 'fresh') : 'fish';
+  $('popNote').classList.toggle('warn', wrong > 0 || crowded());
   meter('wat', 100 - S.dirt, ['#e76f51', '#e9c46a', '#4cc9f0']);
   $('watLbl').textContent = S.dirt > 60 ? 'Murky -20%' : 'Water';
   $('watLbl').classList.toggle('warn', S.dirt > 60);
   const nx = [...Object.values(SPECIES).filter(o => !o.visitor), ...Object.values(DECOR), ...(S.reef ? [] : [{ name: 'Reef Tank', lvl: 3 }])].filter(o => o.lvl > S.lvl).sort((a, b) => a.lvl - b.lvl)[0];
   $('nextUn').textContent = nx ? 'next: ' + nx.name : 'all unlocked!';
   meter('hap', fish.length ? fish.reduce((a, f) => a + f.mood, 0) / fish.length : 0, ['#e76f51', '#e9c46a', '#ff8fc8']);
-  const rate = fish.reduce((a, f) => a + (isAdult(f) && f.hunger > 15 ? fishRate(f.sp, f.v) * (f.mood > 50 ? 1 : .4) : 0), 0);
-  $('rate').textContent = '+' + (rate < 10 ? rate.toFixed(1) : fmt(rate)) + '/min';
+  $('rate').textContent = '+' + fmtRate(liveRate(fish)) + '/min';
+  tankUI();
   if (sel) panel();
 }
 
 // Fish panel
 function openPanel(f) {
-  const i = INFO[f.sp], bad = wrongWater(f);
+  const i = INFO[f.sp], bad = wrongWater(f), bully = scaredOf(f);
   sel = f; sellArm = 0; $('fpName').value = f.name;
-  $('fpNote').textContent = bad ? '😵 Stressed! It needs ' + (i[0] === 'salt' ? 'salt' : 'fresh') + 'water. ' + (S.reef ? 'Move it to your other tank.' : 'Unlock the Reef Tank in Upgrades.') : ({ salt: '🌊 Saltwater', fresh: '💧 Freshwater', any: '💧🌊 Any water' })[i[0]] + ' · ' + i[1];
-  $('fpNote').classList.toggle('warn', bad);
+  $('fpNote').textContent = bad ? '😵 Stressed! It needs ' + (i[0] === 'salt' ? 'salt' : 'fresh') + 'water. ' + (S.reef ? 'Move it to your other tank.' : 'Unlock the Reef Tank in Upgrades.')
+    : bully ? '😰 Scared of the ' + SPECIES[bully.sp].name + '. ' + (bully.sp === 'betta' || bully.sp === 'puffer' ? 'It nips fins.' : 'It hunts small fish.')
+    : lonely(f) ? '🥺 Lonely: ' + SPECIES[f.sp].name + 's feel safe in a group of 3+.'
+    : ({ salt: '🌊 Saltwater', fresh: '💧 Freshwater', any: '💧🌊 Any water' })[i[0]] + ' · ' + i[1];
+  $('fpNote').classList.toggle('warn', bad || !!bully || lonely(f));
   $('fpMove').style.display = bad && S.reef ? '' : 'none';
   $('fishPanel').classList.add('open'); panel();
 }
@@ -1534,7 +1558,8 @@ function card({ art, name, price, desc, tag, tagNote, lock, poor, onClick }) {
   return el;
 }
 function renderShop() {
-  $('shopCoins').textContent = '🪙 ' + fmt(S.coins) + ' · LV ' + S.lvl;
+  const nx = [...Object.values(SPECIES).filter(o => !o.visitor), ...Object.values(DECOR), ...(S.reef ? [] : [{ name: 'Reef Tank', lvl: 3 }])].filter(o => o.lvl > S.lvl).sort((a, b) => a.lvl - b.lvl)[0];
+  $('shopCoins').textContent = '🪙 ' + fmt(S.coins) + ' · LV ' + S.lvl + (nx ? ' · next: ' + nx.name + ' at LV ' + nx.lvl : '');
   const tabs = $('shopTabs'), grid = $('shopGrid');
   tabs.innerHTML = ''; grid.innerHTML = '';
   for (const [k, l] of [['fish', '🐠 Fish'], ['decor', '🪸 Decor'], ['up', '⚙️ Upgrades']]) {
@@ -1545,7 +1570,7 @@ function renderShop() {
     if (s.visitor) continue;
     const lock = S.lvl < s.lvl;
     const r = fishRate(id), w = INFO[id][0], other = w !== 'any' && w !== S.water;
-    grid.append(card({ art: artSprite(fishSprite(id)), name: s.name, price: lock ? '🔒 LV ' + s.lvl : '🪙 ' + s.price, desc: s.desc + (isFloor(s) ? '' : '\n≈' +(r < 10 ? r.toFixed(1) : Math.round(r)) + ' coins/min · ' + Math.max(1, Math.round(s.price / r)) + 'm payback'), tag: w, tagNote: other ? (S.reef ? 'goes to other tank' : 'needs Reef Tank') : '', lock, poor: !lock && S.coins < s.price, onClick: () => buyFish(id) }));
+    grid.append(card({ art: artSprite(fishSprite(id)), name: s.name, price: lock ? '🔒 LV ' + s.lvl : '🪙 ' + s.price, desc: s.desc + (isFloor(s) ? '\n🧽 cleans ' + (s.kind === 'snail' ? 3.6 : 1.2) + ' dirt/min' : '\n🪙 ' + fmtRate(r) + '/min · ⏱ earns back in ' + Math.max(1, Math.round(s.price / r)) + 'm') + (BULLY[id] ? '\n⚠ bothers ' + BULLY[id].map(x => SPECIES[x].name).join(', ') : ''), tag: w, tagNote: other ? (S.reef ? 'lives in your Reef tank' : 'needs Reef Tank (LV 3)') : '', lock, poor: !lock && S.coins < s.price, onClick: () => buyFish(id) }));
   }
   if (shopTab === 'decor') for (const [id, D] of Object.entries(DECOR)) {
     const lock = S.lvl < D.lvl;
@@ -1583,6 +1608,8 @@ function buyFish(id) {
   fish.push(f); dexAdd(id, 'normal'); gainXP(Math.max(1, s.price / 5 | 0)); goal('buyFish'); goal('buy');
   for (let i = 0; i < 12; i++) bubble(f.x + rnd(-6, 6), f.y + rnd(0, 6), 1);
   SFX.buy(); toast('Welcome, ' + f.name + ' the ' + s.name + '! 💖'); closeModals();
+  const v = BULLY[id] && fish.find(o => BULLY[id].includes(o.sp)), b = fish.find(o => BULLY[o.sp] && BULLY[o.sp].includes(id));
+  if (v || b) setTimeout(() => toast('⚠ Heads up: ' + (v ? s.name + ' will bother your ' + SPECIES[v.sp].name : SPECIES[b.sp].name + ' will bother your new ' + s.name) + '. They will be stressed.'), 1500);
 }
 function buyDecor(id) {
   const D = DECOR[id];
